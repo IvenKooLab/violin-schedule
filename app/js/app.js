@@ -923,6 +923,129 @@ function syncFillForm(){
     : '数据存在本机；配好云同步后，改任何内容都会自动同步到另一台手机 ♡';
 }
 
+/* ---------------- 一键导入课表（文本解析 + AI 截图识别） ---------------- */
+const DAY_MAP = {'一':0,'二':1,'三':2,'四':3,'五':4,'六':5,'日':6,'天':6,'1':0,'2':1,'3':2,'4':3,'5':4,'6':5,'7':6};
+const DOW_NAMES = DOW;
+const TIME_RE = /(\d{1,2})\s*[:：点]\s*(\d{2})?(?:\s*[~～\-—–至到]\s*(\d{1,2})\s*[:：点]\s*(\d{2})?)?/;
+const toPM = h => (h >= 1 && h <= 7) ? h + 12 : h;   // 备忘录习惯：1~7 点默认是下午/晚上
+
+function parseScheduleText(raw){
+  const items = [], skipped = [];
+  let curDow = null, curLoc = '';
+  String(raw||'').split(/\r?\n/).forEach(rawLine=>{
+    let line = rawLine.replace(/[✓✔☑✅]/g,'').replace(/\s+/g,' ').trim();
+    if(!line) return;
+    const dayM = line.match(/^(?:周|星期|礼拜)\s*([一二三四五六日天])$/);
+    if(dayM){ curDow = DAY_MAP[dayM[1]]; curLoc=''; return; }
+    if(/放假|停课|休息/.test(line)){ skipped.push(rawLine.trim()); return; }
+    const tm = line.match(TIME_RE);
+    if(!tm){
+      if(line.length <= 14 && (!/\d/.test(line) || /教室|琴房|教学点|艺培|学堂|中心|工作室/.test(line))){ curLoc = line.replace(/^[在地:：]\s*/,''); return; }
+      skipped.push(rawLine.trim()); return;
+    }
+    const start = `${pad(toPM(+tm[1]))}:${tm[2]||'00'}`;
+    const end = tm[3] !== undefined ? `${pad(toPM(+tm[3]))}:${tm[4]||'00'}` : '';
+    const noteM = line.match(/[（(]([^）)]+)[）)]/);
+    const note = noteM ? noteM[1].replace(/\s+/g,'').trim() : '';
+    let around = (line.slice(0, tm.index) + ' ' + line.slice(tm.index + tm[0].length))
+      .replace(/[（(][^）)]*[）)]/g,' ').replace(/\s+/g,' ').trim();
+    let name = around, loc = curLoc;
+    if(curLoc && around.startsWith(curLoc)){
+      name = around.slice(curLoc.length).trim();
+    } else if(around && around.length <= 12 && /教室|琴房|学堂|艺培|培训|中心/.test(around)){
+      loc = around; name = '';
+    }
+    name = (name||'').replace(/^(在|去|上|找)/,'').replace(/(教室|琴房)+$/,'').trim();
+    if(!name && !loc){ skipped.push(rawLine.trim()); return; }
+    items.push({ name: name || '(待补名字)', loc, dow: curDow, time: start, end, note });
+  });
+  return { items, skipped };
+}
+
+const AI_PROMPT = [
+  '你是课表解析器。把图片里的课程安排转成 JSON，格式：',
+  '{"items":[{"name":"学生名","dow":"周六","time":"15:10","end":"16:55","loc":"地点","note":"括号里的备注"}],"skipped":["看不懂的行原文"]}',
+  '规则：',
+  '1. 时间一律转 24 小时制：1~7 点视为下午晚上要加 12（3:10→15:10、7:30→19:30），9:00~12:59 保持不变',
+  '2. dow 取值：周一/周二/周三/周四/周五/周六/周日',
+  '3. 每行的学生名 = 去掉时间、地点、勾选符号后的文字；单独成行的地点应用于它下面所有行',
+  '4. 含 放假/停课/休息 的行和看不懂的行放进 skipped，不要编造',
+  '5. 只输出 JSON，不要任何解释'
+].join('\n');
+
+async function aiRecognizeDataUrl(dataUrl){
+  const key = (document.getElementById('aiKey').value.trim()) || (S.meta.ai && S.meta.ai.key) || '';
+  if(!key) throw new Error('先填智谱 API Key（图片识别要用）');
+  S.meta.ai = Object.assign({}, S.meta.ai||{}, {key}); persist();
+  const body = { model:'glm-4v-flash', temperature:0.1, messages:[{ role:'user', content:[
+    { type:'image_url', image_url:{ url:dataUrl } },
+    { type:'text', text: AI_PROMPT }
+  ]}]};
+  const r = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body: JSON.stringify(body)
+  });
+  if(!r.ok){ const t = await r.text(); throw new Error('AI 接口 '+r.status+'：'+t.slice(0,120)); }
+  const j = await r.json();
+  const txt = (j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || '';
+  const m = txt.match(/\{[\s\S]*\}/);
+  if(!m) throw new Error('AI 没吐出 JSON：'+txt.slice(0,80));
+  return JSON.parse(m[0]);
+}
+
+let importItems = [];
+function showImportPreview(items, skipped){
+  importItems = items;
+  $('prevList').innerHTML = items.length ? items.map(it=>`
+    <div class="prow">
+      <input type="checkbox" class="p-on" checked>
+      <input type="text" class="p-name" value="${esc(it.name)}">
+      <select class="p-dow">${DOW_NAMES.map((d,di)=>`<option value="${di}" ${it.dow===di?'selected':''}>${d}</option>`).join('')}</select>
+      <input type="time" class="p-time" value="${it.time}">
+      <input type="time" class="p-end" value="${it.end||''}">
+      <input type="text" class="p-loc" value="${esc(it.loc||'')}" placeholder="地点">
+    </div>`).join('')
+    : '<div class="thint">一条都没解析出来…换段文字试试，或者用截图识别</div>';
+  const sk = $('prevSkipped');
+  if(skipped && skipped.length){ sk.style.display=''; $('prevSkippedList').textContent = skipped.join('；'); }
+  else sk.style.display='none';
+  $('impTextPane').style.display='none';
+  $('impAiPane').style.display='none';
+  $('impPreview').style.display='';
+}
+function confirmImport(){
+  const rows = document.querySelectorAll('#prevList .prow');
+  let nStu = 0, nSlot = 0;
+  rows.forEach(r=>{
+    if(!r.querySelector('.p-on').checked) return;
+    const name = r.querySelector('.p-name').value.trim() || '(待补名字)';
+    const dow  = +r.querySelector('.p-dow').value;
+    const time = r.querySelector('.p-time').value || '12:00';
+    const end  = r.querySelector('.p-end').value || '';
+    const loc  = r.querySelector('.p-loc').value.trim();
+    let st = S.students.find(s=>s.name===name);
+    if(!st){
+      st = { id:uid(), name, emoji:EMOJIS[(S.students.length+3)%EMOJIS.length],
+        ci:S.students.length%AVCOLORS.length, heart:HEART_KEYS[S.students.length%HEART_KEYS.length],
+        loc, level:'', piece:'', fee:0, note:'', ts:Date.now() };
+      S.students.push(st); nStu++;
+    } else if(loc && !st.loc){ st.loc = loc; st.ts = Date.now(); }
+    const dup = S.slots.some(x=>x.studentId===st.id && x.dow===dow && x.time===time);
+    if(!dup){ S.slots.push({ id:uid(), studentId:st.id, dow, time, end, note:'', ts:Date.now() }); nSlot++; }
+  });
+  save(); closeMask('maskOneImport'); renderAll();
+  toast(nStu+nSlot ? `导入完成：${nStu} 名新学生 · ${nSlot} 节固定课 ♡` : '没有勾选任何行哦');
+}
+function openOneImport(){
+  $('impTextPane').style.display='';
+  $('impAiPane').style.display='none';
+  $('impPreview').style.display='none';
+  $('impText').value='';
+  document.querySelectorAll('.itab').forEach(t=>t.classList.toggle('on', t.dataset.imp==='text'));
+  if(S.meta.ai && S.meta.ai.key) $('aiKey').value = S.meta.ai.key;
+  openMask('maskOneImport');
+}
+
 /* ---------------- 备份导入导出 ---------------- */
 const b64e = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
 const b64d = s => new TextDecoder().decode(Uint8Array.from(atob(s), c=>c.charCodeAt(0)));
@@ -1089,6 +1212,35 @@ function bind(){
   });
   $('btnDoImport').addEventListener('click',doImport);
 
+  // 一键导入课表
+  $('btnOneImport').addEventListener('click', openOneImport);
+  document.querySelectorAll('.itab').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.itab').forEach(x=>x.classList.toggle('on', x===t));
+    $('impTextPane').style.display = t.dataset.imp==='text' ? '' : 'none';
+    $('impAiPane').style.display = t.dataset.imp==='ai' ? '' : 'none';
+    $('impPreview').style.display='none';
+  }));
+  $('btnParseText').addEventListener('click',()=>{
+    const txt = $('impText').value;
+    if(!txt.trim()){ toast('先粘贴课表文字呀'); return; }
+    const {items, skipped} = parseScheduleText(txt);
+    showImportPreview(items, skipped);
+  });
+  $('btnAiParse').addEventListener('click', async ()=>{
+    const f = $('impFile').files[0];
+    if(!f){ toast('先选一张截图'); return; }
+    const btn = $('btnAiParse'); btn.disabled = true; const old = btn.textContent; btn.textContent = '🤖 识别中…';
+    try{
+      const dataUrl = await new Promise((res,rej)=>{ const fr = new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(f); });
+      const obj = await aiRecognizeDataUrl(dataUrl);
+      const items = (obj.items||[]).map(it=>({ name: it.name||'(待补名字)', loc: it.loc||'',
+        dow: DAY_MAP[(it.dow||'').replace('周','')] ?? null, time: it.time||'12:00', end: it.end||'', note: it.note||'' }));
+      showImportPreview(items, obj.skipped||[]);
+    }catch(e){ toast('识别失败：'+e.message); }
+    btn.disabled = false; btn.textContent = old;
+  });
+  $('btnDoImportSched').addEventListener('click', confirmImport);
+
   // 云同步
   $('btnSyncSave').addEventListener('click',()=>{
     S.meta.sync.url = $('syncUrl').value.trim();
@@ -1130,10 +1282,16 @@ function init(){
   }
   setTimeout(checkSplash, 600);
 
-  // 线上环境才注册 Service Worker（本地开发不缓存）
-  const isLocal = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
-  if('serviceWorker' in navigator && !isLocal){
+  // 注册 Service Worker：任何 http(s) 环境都注册（离线可用的核心）
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
+
+  // 离线徽标
+  const netEl = document.getElementById('netBadge');
+  const netUpdate = ()=> netEl.classList.toggle('on', !navigator.onLine);
+  netUpdate();
+  window.addEventListener('online', ()=>{ netEl.classList.remove('on'); toast('网络回来啦 ☁️'); });
+  window.addEventListener('offline', ()=>{ netEl.classList.add('on'); });
 }
 document.addEventListener('DOMContentLoaded', init);

@@ -162,6 +162,19 @@ body.t-kuromi .wchip.evt-perf{background:#5c4a1f;color:#ffe9b8}
 .evrow .evt.perf{background:#ffedc9;color:#8a6116}
 .evrow .evt-t{font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
+/* ---------- 一键导入 ---------- */
+.itabs{display:flex;gap:8px}
+.itab{flex:1;border:2px solid var(--chip);background:var(--card);color:var(--sub);border-radius:16px;padding:9px 0;font-size:14px;cursor:pointer;font-family:inherit}
+.itab.on{border-color:var(--accent);color:var(--accent);background:var(--chip);font-weight:700}
+.prow{display:flex;align-items:center;gap:7px;background:var(--card);border-radius:14px;padding:7px 9px;margin-bottom:6px;box-shadow:0 2px 8px rgba(150,100,125,.07)}
+.prow input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent);flex-shrink:0}
+.prow input[type=text],.prow input[type=time],.prow select{border:1.5px solid var(--chip);background:var(--bg2);color:var(--text);border-radius:9px;padding:5px 6px;font-size:12px;font-family:inherit;min-width:0}
+.prow .p-name{flex:1.1;min-width:70px}
+.prow .p-time,.prow .p-end{width:74px}
+.prow .p-loc{flex:1;min-width:60px}
+.prow .p-dow{width:56px}
+.prow .p-flag{font-size:12px;flex-shrink:0}
+
 /* ---------- 主题页 ---------- */
 .tlabel{margin:14px 4px 8px;font-size:14px;color:var(--text);font-weight:700}
 .tgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -272,6 +285,9 @@ body.t-kuromi .wchip.evt-perf{background:#5c4a1f;color:#ffe9b8}
   background:var(--text);color:var(--bg2);font-size:13px;border-radius:20px;padding:8px 18px;z-index:120;
   transition:transform .25s;pointer-events:none;max-width:80vw;text-align:center}
 #toast.on{transform:translateX(-50%) translateY(0)}
+#netBadge{position:fixed;top:calc(env(safe-area-inset-top) + 14px);left:14px;background:#8a6116;color:#fff;
+  font-size:12px;border-radius:16px;padding:5px 12px;z-index:110;display:none;box-shadow:0 4px 10px rgba(0,0,0,.2)}
+#netBadge.on{display:block}
 
 @media (min-width:560px){
   body{background:var(--bg2)}

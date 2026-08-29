@@ -1,5 +1,5 @@
 /* 琴琴课表 Service Worker：缓存应用外壳，离线也能开 */
-const CACHE = 'qinqin-v4';
+const CACHE = 'qinqin-v5';
 const ASSETS = [
   './',
   './index.html',
@@ -31,6 +31,7 @@ self.addEventListener('activate', e => {
 });
 self.addEventListener('fetch', e => {
   if (e.request.method !== 'GET') return;
+  if (new URL(e.request.url).pathname.startsWith('/api/')) return; // 同步 API 永远走网络，绝不缓存
   e.respondWith(
     caches.match(e.request).then(hit => hit || fetch(e.request).then(res => {
       const cp = res.clone();

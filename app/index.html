@@ -110,6 +110,7 @@
         <button class="btn ghost" id="btnMetro">🥁 节拍器</button>
       </div>
       <div class="tlabel">💾 数据小管家</div>
+      <button class="btn big" id="btnOneImport" style="margin-bottom:10px">✨ 一键导入课表（粘贴文本 / 截图识别）</button>
       <div class="datarow">
         <button class="btn ghost" id="btnExport">📤 导出备份</button>
         <button class="btn ghost" id="btnImport">📥 导入备份</button>
@@ -303,6 +304,41 @@
   </div>
 </div>
 
+<!-- ===== 弹层：一键导入课表 ===== -->
+<div class="mask" id="maskOneImport">
+  <div class="sheet" style="position:relative">
+    <button class="close" data-close="maskOneImport">✕</button>
+    <h3>📥 一键导入课表</h3>
+    <div class="itabs">
+      <button class="itab on" data-imp="text">📝 粘贴文本</button>
+      <button class="itab" data-imp="ai">🖼️ 截图识别</button>
+    </div>
+    <div id="impTextPane" class="frm" style="margin-top:12px">
+      <div><label>把备忘录 / 微信里的课表文字原样粘贴进来</label>
+      <textarea id="impText" style="min-height:150px" placeholder="支持这种格式：&#10;周六&#10;音乐教室 302&#10;9:45~10:30 小小兔&#10;10:30~11:15 果果（先去 301 再去 302）&#10;周日&#10;城南教学点&#10;陆小慷 7:30"></textarea></div>
+      <button class="btn big" id="btnParseText">解析预览 ♪</button>
+      <div class="thint">全程在本机解析，不联网、不花钱。识别不了的行会列出来供参考</div>
+    </div>
+    <div id="impAiPane" class="frm" style="margin-top:12px;display:none">
+      <div><label>课表截图（备忘录 / 聊天记录截图都行）</label>
+      <input type="file" id="impFile" accept="image/*" style="width:100%;font-size:13px"></div>
+      <div><label>智谱 API Key（图片识别需要，只存在本机）</label>
+      <input type="text" id="aiKey" placeholder="粘贴你的智谱 Key" autocomplete="off"></div>
+      <button class="btn big" id="btnAiParse">🤖 识别这张截图</button>
+      <div class="thint">走 AI 识别，免费模型（glm-4v-flash）；不想配 Key 就用左边的粘贴文本</div>
+    </div>
+    <div id="impPreview" style="display:none">
+      <div class="tlabel" style="margin-top:14px">解析结果 —— 勾选要导入的，名字/时间/地点都能改</div>
+      <div id="prevList"></div>
+      <div id="prevSkipped" style="display:none;margin:8px 4px 0">
+        <div class="thint" style="text-align:left;color:#c9a26b">⚠️ 这些行没看懂，没敢导入：</div>
+        <div id="prevSkippedList" style="font-size:11.5px;color:var(--sub);padding:2px 6px;line-height:1.7"></div>
+      </div>
+      <button class="btn big" id="btnDoImportSched" style="margin-top:12px">导入勾选的课程 ♡</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== 生日彩蛋 ===== -->
 <div id="splash">
   <svg class="mel" viewBox="0 0 120 120">
@@ -325,6 +361,7 @@
 </div>
 
 <div id="toast"></div>
+<div id="netBadge">📴 离线中 · 数据照常记</div>
 
 <script src="js/app.js"></script>
 </body>
