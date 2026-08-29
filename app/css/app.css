@@ -166,13 +166,13 @@ body.t-kuromi .wchip.evt-perf{background:#5c4a1f;color:#ffe9b8}
 .itabs{display:flex;gap:8px}
 .itab{flex:1;border:2px solid var(--chip);background:var(--card);color:var(--sub);border-radius:16px;padding:9px 0;font-size:14px;cursor:pointer;font-family:inherit}
 .itab.on{border-color:var(--accent);color:var(--accent);background:var(--chip);font-weight:700}
-.prow{display:flex;align-items:center;gap:7px;background:var(--card);border-radius:14px;padding:7px 9px;margin-bottom:6px;box-shadow:0 2px 8px rgba(150,100,125,.07)}
+.prow{display:flex;align-items:center;gap:7px;flex-wrap:wrap;background:var(--card);border-radius:14px;padding:7px 9px;margin-bottom:6px;box-shadow:0 2px 8px rgba(150,100,125,.07)}
 .prow input[type=checkbox]{width:17px;height:17px;accent-color:var(--accent);flex-shrink:0}
 .prow input[type=text],.prow input[type=time],.prow select{border:1.5px solid var(--chip);background:var(--bg2);color:var(--text);border-radius:9px;padding:5px 6px;font-size:12px;font-family:inherit;min-width:0}
-.prow .p-name{flex:1.1;min-width:70px}
-.prow .p-time,.prow .p-end{width:74px}
-.prow .p-loc{flex:1;min-width:60px}
-.prow .p-dow{width:56px}
+.prow .p-name{flex:1.1;min-width:64px}
+.prow .p-time,.prow .p-end{width:72px;flex:1 1 64px}
+.prow .p-loc{flex:1;min-width:56px}
+.prow .p-dow{width:54px;flex:0 0 54px}
 .prow .p-flag{font-size:12px;flex-shrink:0}
 
 /* ---------- 主题页 ---------- */
@@ -205,9 +205,13 @@ body.t-kuromi .wchip.evt-perf{background:#5c4a1f;color:#ffe9b8}
   padding:9px 8px calc(14px + env(safe-area-inset-bottom));
   border-top:1.5px solid color-mix(in srgb, var(--text) 8%, transparent);
 }
-.tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--sub);width:64px;padding:6px 0;border-radius:16px;background:none;border:none;cursor:pointer;font-family:inherit}
+.tab{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--sub);flex:1 1 0;min-width:0;max-width:80px;padding:6px 0;border-radius:16px;background:none;border:none;cursor:pointer;font-family:inherit}
 .tab .ti{font-size:19px}
 .tab.on{background:var(--chip);color:var(--accent);font-weight:700}
+@media (max-width:350px){
+  .tab{font-size:10px;padding:6px 0 4px}
+  .tab .ti{font-size:17px}
+}
 
 /* ---------- 弹层 ---------- */
 .mask{position:fixed;inset:0;background:rgba(40,20,35,.45);z-index:50;display:none;align-items:flex-end;justify-content:center}
