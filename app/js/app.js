@@ -1301,6 +1301,9 @@ function bind(){
     S.meta.sync.url = $('syncUrl').value.trim();
     S.meta.sync.token = $('syncToken').value.trim();
     save(); syncFillForm(); toast('同步设置已保存 ♡');
+    if(S.meta.sync.url && S.meta.sync.token){
+      syncPull().then(m=>{ syncFillForm(); toast(m); }).catch(e=>toast('同步检查失败：'+e.message));
+    }
   });
   $('btnSyncTest').addEventListener('click',async ()=>{
     const base = $('syncUrl').value.trim().replace(/\/+$/,'');
@@ -1339,6 +1342,11 @@ function init(){
     }catch(e){}
   }
   setTimeout(checkSplash, 600);
+
+  // 已配置云同步：启动时自动拉取最新（后台静默）
+  if(syncCfg().url && syncCfg().token){
+    setTimeout(()=>{ syncPull().catch(()=>{}); }, 1500);
+  }
 
   // 注册 Service Worker：任何 http(s) 环境都注册（离线可用的核心）
   if('serviceWorker' in navigator && location.protocol.startsWith('http')){
