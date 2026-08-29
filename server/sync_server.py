@@ -78,7 +78,11 @@ class Handler(SimpleHTTPRequestHandler):
         super().__init__(*a, directory=os.path.abspath(ROOT), **kw)
 
     def end_headers(self):
-        self.send_header('Cache-Control', 'no-store')
+        path = self.path.split('?')[0]
+        if path.startswith('/assets/font'):
+            self.send_header('Cache-Control', 'public, max-age=31536000, immutable')
+        else:
+            self.send_header('Cache-Control', 'no-store')
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Headers', 'Authorization,Content-Type')
         self.send_header('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')

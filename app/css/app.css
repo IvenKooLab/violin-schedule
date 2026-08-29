@@ -4,14 +4,40 @@
   src:url('../assets/zcool.woff2') format('woff2');
   font-display:swap;
 }
+@font-face{
+  font-family:'HuangYou';
+  src:url('../assets/font-huangyou.woff2') format('woff2');
+  font-display:swap;
+}
+@font-face{
+  font-family:'KaiShu';
+  src:url('../assets/font-kai.woff2') format('woff2');
+  font-display:swap;
+}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{
   font-family:'ZCOOL','Yuanti SC','PingFang SC','Microsoft YaHei',sans-serif;
+  /* 字体族由 body 上的 f-* 类决定 */
   background:var(--bg1);
   color:var(--text);
   overflow-x:hidden;
 }
+
+/* ---------- 字体 ---------- */
+body.f-kuaile{font-family:'ZCOOL','Yuanti SC','PingFang SC','Microsoft YaHei',sans-serif}
+body.f-huangyou{font-family:'HuangYou','ZCOOL','Yuanti SC','PingFang SC','Microsoft YaHei',sans-serif}
+body.f-kai{font-family:'KaiShu','Yuanti SC','PingFang SC','Microsoft YaHei',sans-serif}
+body.f-sys{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+
+/* ---------- 字体选择卡片 ---------- */
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fcard{border-radius:20px;padding:10px 12px;background:var(--card);box-shadow:0 5px 14px rgba(150,100,125,.10);position:relative;outline:2.5px solid transparent;border:none;cursor:pointer;font-family:inherit;text-align:left;min-width:0}
+.fcard.sel{outline-color:var(--accent)}
+.fcard .fn{font-size:15px;color:var(--text);font-weight:700;display:block}
+.fcard .fd{font-size:10.5px;color:var(--sub);display:block;margin-top:2px}
+.fcard .ck{position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--onaccent);font-size:12px;display:flex;align-items:center;justify-content:center}
+.fcard .fs{font-size:20px;color:var(--text)}
 
 /* ---------- 主题 ---------- */
 body.t-melody{--bg1:#ffe6ef;--bg2:#fff9fb;--accent:#ff6d9d;--accent2:#ff8fb3;--chip:#ffd7e5;--text:#7c4258;--sub:#b9879b;--card:#ffffff;--onaccent:#fff}

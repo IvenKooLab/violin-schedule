@@ -28,6 +28,12 @@ const HEART_BG = {'💗':'#ffd7e5','💙':'#d3e8fa','💜':'#e6d6f7','💚':'#d8
 const HEART_DEEP = {'💗':'#e56b9a','💙':'#4a86c8','💜':'#9a6fd0','💚':'#4da86b','🧡':'#e0893a','💛':'#c9a227','❤️':'#e05c5c','🤎':'#a5825f','🤍':'#b8b3bd','🖤':'#7d7590'};
 const DOW = ['周一','周二','周三','周四','周五','周六','周日'];
 const THEME_COLOR = { melody:'#ffe6ef', kitty:'#fff3f4', kuromi:'#2e2837', cinnamo:'#e7f3fe' };
+const FONTS = [
+  { id:'kuaile',   name:'快乐体', desc:'活泼手写 · 默认' },
+  { id:'huangyou', name:'黄油体', desc:'圆润厚实 · 奶fufu' },
+  { id:'kai',      name:'楷书体', desc:'手写气质 · 文艺' },
+  { id:'sys',      name:'系统体', desc:'标准清爽 · 最快' },
+];
 const STUDENT_COLORS = { melody:'#ffe3ec', kitty:'#ffe3ec', kuromi:'#4a4258', cinnamo:'#d3e8fa' };
 
 const MASCOTS = {
@@ -92,7 +98,7 @@ let importPayload = null;
 
 function defaults(){
   return { students:[], slots:[], log:{}, extras:[], projects:[], events:[],
-    meta:{ theme:'melody', wall:'none', birthday:'08-30', splashYear:0, splashHideDate:'', seq:1, weekView:'list', sync:{url:'',token:'',auto:true,rev:0} } };
+    meta:{ theme:'melody', wall:'none', birthday:'08-30', splashYear:0, splashHideDate:'', font:'kuaile', seq:1, weekView:'list', sync:{url:'',token:'',auto:true,rev:0} } };
 }
 function persist(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){ toast('存不下了…设备存储可能被限制'); } scheduleAutoSync(); }
@@ -228,7 +234,7 @@ const $ = id => document.getElementById(id);
 
 function applyTheme(){
   const t = S.meta.theme;
-  document.body.className = 't-'+t;
+  document.body.className = 't-'+t+' f-'+(S.meta.font||'kuaile');
   document.querySelector('meta[name=theme-color]').setAttribute('content', THEME_COLOR[t]||'#ffe6ef');
   const svg = MASCOTS[t] || MASCOTS.melody;
   ['mascotSlot','mascotSlot2','mascotSlot3','mascotSlot4'].forEach(id=>{ const el=$(id); if(el) el.innerHTML=svg; });
@@ -458,6 +464,12 @@ function renderThemes(){
       ${S.meta.theme===t.id?'<span class="ck">✓</span>':''}
       <span class="img"><img src="${t.img}" alt=""></span>
       <span><span class="tn">${t.name}</span><span class="td" style="display:block">${t.td}</span></span>
+    </button>`).join('');
+  $('fontGrid').innerHTML = FONTS.map(f=>`
+    <button class="fcard ${S.meta.font===f.id?'sel':''}" data-font="${f.id}">
+      ${S.meta.font===f.id?'<span class="ck">✓</span>':''}
+      <span class="fs" style="font-family:${f.id==='kuaile'?'ZCOOL':f.id==='huangyou'?'HuangYou':f.id==='kai'?'KaiShu':'inherit'}">琴 ♪</span>
+      <span class="fn">${f.name}</span><span class="fd">${f.desc}</span>
     </button>`).join('');
   $('wallGrid').innerHTML = WALLS.map(w=>{
     const style = w.img? `background-image:url('${w.img}')` : `background-image:${w.grad||'linear-gradient(160deg,var(--bg1),var(--bg2))'}`;
@@ -847,6 +859,7 @@ function renderOrch(){
 /* ---------------- 主题 / 壁纸 ---------------- */
 function setTheme(id){ S.meta.theme=id; save(); applyTheme(); renderThemes(); renderStudents(); }
 function setWall(id){ S.meta.wall=id; save(); applyWall(); renderThemes(); }
+function setFont(id){ S.meta.font=id; save(); applyTheme(); renderThemes(); }
 
 /* ---------------- 音叉 / 节拍器 ---------------- */
 let AC = null;
@@ -1252,6 +1265,7 @@ function bind(){
   // 主题
   $('themeGrid').addEventListener('click',e=>{ const c=e.target.closest('[data-theme]'); if(c) setTheme(c.dataset.theme); });
   $('wallGrid').addEventListener('click',e=>{ const c=e.target.closest('[data-wall]'); if(c) setWall(c.dataset.wall); });
+  $('fontGrid').addEventListener('click',e=>{ const c=e.target.closest('[data-font]'); if(c) setFont(c.dataset.font); });
 
   // 音叉节拍器
   $('btnTuner').addEventListener('click',()=>{ $('tunerPane').style.display=''; $('metroPane').style.display='none'; metroStop(); openMask('maskTuner'); });

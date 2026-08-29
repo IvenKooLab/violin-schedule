@@ -14,7 +14,11 @@ class NoStoreHandler(SimpleHTTPRequestHandler):
         super().__init__(*a, directory=root, **kw)
 
     def end_headers(self):
-        self.send_header('Cache-Control', 'no-store')
+        path = self.path.split('?')[0]
+        if path.startswith('/assets/font'):
+            self.send_header('Cache-Control', 'public, max-age=31536000, immutable')
+        else:
+            self.send_header('Cache-Control', 'no-store')
         super().end_headers()
 
     def log_message(self, fmt, *args):

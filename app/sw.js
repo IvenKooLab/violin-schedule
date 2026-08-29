@@ -1,5 +1,5 @@
 /* 琴琴课表 Service Worker：缓存应用外壳，离线也能开 */
-const CACHE = 'qinqin-v9';
+const CACHE = 'qinqin-v10';
 const ASSETS = [
   './',
   './index.html',
@@ -7,6 +7,8 @@ const ASSETS = [
   './js/app.js',
   './manifest.json',
   './assets/zcool.woff2',
+  './assets/font-huangyou.woff2',
+  './assets/font-kai.woff2',
   './assets/icon-180.png',
   './assets/icon-192.png',
   './assets/icon-512.png',
