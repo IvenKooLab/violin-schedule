@@ -1,0 +1,10 @@
+# 本地数据与隐私（绝不入库）
+server/qinqin.db
+server/tokens.txt
+test-screenshots/
+*.log
+
+# 系统杂项
+__pycache__/
+.DS_Store
+Thumbs.db

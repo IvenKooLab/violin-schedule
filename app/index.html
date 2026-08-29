@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="琴琴课表">
+<meta name="theme-color" content="#ffe6ef">
+<link rel="apple-touch-icon" href="assets/icon-180.png">
+<link rel="icon" href="assets/icon-192.png">
+<link rel="manifest" href="manifest.json">
+<title>琴琴课表 🎻</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body class="t-melody">
+
+<div id="wallpaper"></div>
+
+<!-- 装饰 -->
+<span class="deco" style="top:90px;left:-16px;font-size:70px">🎀</span>
+<span class="deco" style="bottom:120px;right:-14px;font-size:60px">🌸</span>
+
+<div id="app">
+  <main id="main">
+
+    <!-- ===== 今日 ===== -->
+    <section class="page on" id="page-today">
+      <div class="pagehead">
+        <div>
+          <div class="dt" id="todayDate">—</div>
+          <h1 id="todayGreet">今日课程</h1>
+        </div>
+        <div class="sticker" id="mascotSlot"></div>
+      </div>
+      <div id="birthdayWrap"></div>
+      <div id="nextWrap"></div>
+      <div id="todayList" class="lList"></div>
+      <div id="todaySummary" style="margin:6px 4px 0"></div>
+    </section>
+
+    <!-- ===== 周课表 ===== -->
+    <section class="page" id="page-week">
+      <div class="pagehead">
+        <div>
+          <div class="dt" id="weekMonth">—</div>
+          <h1>本周课表</h1>
+        </div>
+        <div class="sticker" id="mascotSlot2"></div>
+      </div>
+      <div class="weeknav">
+        <button id="wkPrev">‹</button>
+        <span class="wt" id="wkLabel">—</span>
+        <button id="wkNext">›</button>
+      </div>
+      <div id="weekList"></div>
+      <div id="weekSummary" style="margin:6px 4px 0;text-align:center"></div>
+    </section>
+
+    <!-- ===== 学生 ===== -->
+    <section class="page" id="page-students">
+      <div class="pagehead">
+        <div>
+          <div class="dt">一起进步的小朋友们</div>
+          <h1>我的学生</h1>
+        </div>
+        <div class="sticker" id="mascotSlot3"></div>
+      </div>
+      <div id="studentStats"></div>
+      <div class="search" id="searchWrap">🔍 <input type="text" id="searchInput" placeholder="找学生、找曲子…"></div>
+      <div id="studentList"></div>
+      <div style="text-align:center;margin-top:6px">
+        <button class="btn ghost" id="btnAddStudent2">＋ 添加学生</button>
+      </div>
+    </section>
+
+    <!-- ===== 乐团 ===== -->
+    <section class="page" id="page-orch">
+      <div class="pagehead">
+        <div>
+          <div class="dt">排练与演出，都值得被记住</div>
+          <h1>乐团 · 演出</h1>
+        </div>
+        <div class="sticker" id="mascotSlot4"></div>
+      </div>
+      <div id="orchStats"></div>
+      <div id="projList"></div>
+      <div style="text-align:center;margin-top:6px">
+        <button class="btn" id="btnAddProject">＋ 新演出项目</button>
+      </div>
+    </section>
+
+    <!-- ===== 主题 ===== -->
+    <section class="page" id="page-themes">
+      <div class="pagehead">
+        <div>
+          <div class="dt">今天想穿哪一套？</div>
+          <h1>主题 · 壁纸</h1>
+        </div>
+        <div class="sticker" style="font-size:28px">🎨</div>
+      </div>
+      <div class="tlabel">🎀 主题角色（换一套 = 全 App 换配色和贴纸）</div>
+      <div class="tgrid" id="themeGrid"></div>
+      <div class="tlabel">🖼️ 壁纸（背景随时换）</div>
+      <div class="wgrid" id="wallGrid"></div>
+      <div class="tlabel">🎵 小工具</div>
+      <div class="funrow">
+        <button class="btn ghost" id="btnTuner">🎻 A4 音叉</button>
+        <button class="btn ghost" id="btnMetro">🥁 节拍器</button>
+      </div>
+      <div class="tlabel">💾 数据小管家</div>
+      <div class="datarow">
+        <button class="btn ghost" id="btnExport">📤 导出备份</button>
+        <button class="btn ghost" id="btnImport">📥 导入备份</button>
+      </div>
+      <div class="tlabel">☁️ 云同步（两台手机数据一致）</div>
+      <div class="frm" style="margin:0 4px">
+        <div><label>服务器地址</label><input type="text" id="syncUrl" placeholder="如 https://qinqin.你的域名.com" autocomplete="off"></div>
+        <div><label>同步码（一家人共用同一个）</label><input type="text" id="syncToken" placeholder="服务器 tokens.txt 里的码" autocomplete="off"></div>
+        <div class="datarow">
+          <button class="btn ghost" id="btnSyncSave">💾 保存设置</button>
+          <button class="btn ghost" id="btnSyncTest">🔌 测试连接</button>
+          <button class="btn ghost" id="btnSyncUp">⬆️ 上传</button>
+          <button class="btn ghost" id="btnSyncDown">⬇️ 下载合并</button>
+        </div>
+        <div class="thint" id="syncHint">数据存在本机；配好云同步后，改任何内容都会自动同步到另一台手机 ♡</div>
+      </div>
+      <div class="thint" id="aboutLine">琴琴课表 · 一个装着爱的小课表 ♡</div>
+    </section>
+
+  </main>
+
+  <nav id="tabbar">
+    <button class="tab on" data-page="today"><span class="ti">🏠</span>今日</button>
+    <button class="tab" data-page="week"><span class="ti">🗓️</span>周课表</button>
+    <button class="tab" data-page="students"><span class="ti">🎀</span>学生</button>
+    <button class="tab" data-page="orch"><span class="ti">🎼</span>乐团</button>
+    <button class="tab" data-page="themes"><span class="ti">🎨</span>主题</button>
+  </nav>
+</div>
+
+<!-- ===== 弹层：学生编辑 ===== -->
+<div class="mask" id="maskStudent">
+  <div class="sheet" style="position:relative">
+    <button class="close" data-close="maskStudent">✕</button>
+    <h3 id="studentFormTitle">添加学生</h3>
+    <div class="frm">
+      <div><label>名字</label><input type="text" id="fName" placeholder="小朋友的昵称" maxlength="10"></div>
+      <div><label>头像（点一个）</label><div class="emgrid" id="emGrid"></div></div>
+      <div><label>课程颜色（周课表格子和卡片都用它）</label><div class="emgrid" id="heartGrid"></div></div>
+      <div><label>程度 / 级别</label><input type="text" id="fLevel" placeholder="如：英皇 3 级 / 启蒙班" maxlength="12"></div>
+      <div><label>正在练的曲子</label><input type="text" id="fPiece" placeholder="如：《开塞 No.2》" maxlength="30"></div>
+      <div><label>地点（去哪上这孩子的课）</label><input type="text" id="fLoc" placeholder="如：琴房 302 / 学校 / 线上" maxlength="16"></div>
+      <div><label>每节课课时费（元，选填，用来记小账本）</label><input type="number" id="fFee" placeholder="如：300" min="0" inputmode="numeric"></div>
+      <div><label>每周固定上课时间（可多个，带备注）</label><div id="slotRows"></div>
+        <button type="button" class="btn ghost" id="btnAddSlot" style="margin-top:8px;font-size:13px;padding:8px 14px">＋ 加一个固定时间</button>
+      </div>
+      <div><label>备注</label><textarea id="fNote" placeholder="手型要盯、家长微信是…" maxlength="60"></textarea></div>
+      <div class="formerr" id="studentErr">先给小朋友起个名字吧</div>
+      <button class="btn big" id="btnSaveStudent">保存 ♡</button>
+      <button class="btn ghost big" id="btnDelStudent" style="display:none;color:#e05c7e">删除这个学生</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 弹层：课程操作 ===== -->
+<div class="mask" id="maskLesson">
+  <div class="sheet" style="position:relative">
+    <button class="close" data-close="maskLesson">✕</button>
+    <div class="lessonhead">
+      <div class="av" id="lsAv">🐰</div>
+      <div><div class="t1" id="lsTitle">果果 · 10:30</div><div class="t2" id="lsSub">《开塞 No.2》</div></div>
+    </div>
+    <div class="actgrid">
+      <button class="btn" id="btnDone">✓ 上完这节课</button>
+      <button class="btn ghost" id="btnLeave">🏖️ 今天请假</button>
+      <button class="btn ghost" id="btnCancelStatus">↩️ 撤销打卡状态</button>
+      <button class="btn ghost" id="btnEditEvent" style="display:none">✏️ 改期 / 编辑</button>
+      <button class="btn ghost" id="btnDelExtra" style="color:#e05c7e;display:none">🗑️ 删除这节加课</button>
+    </div>
+    <div class="notewrap" id="noteWrap">
+      <div class="frm" style="margin-top:12px">
+        <div><label>这节课的小记录（选填）</label>
+        <textarea id="lsNote" placeholder="作业：开塞 3-5 条；顿弓有进步 ♪"></textarea></div>
+        <button class="btn big" id="btnSaveDone">保存打卡 ✓</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 弹层：加课 ===== -->
+<div class="mask" id="maskExtra">
+  <div class="sheet" style="position:relative">
+    <button class="close" data-close="maskExtra">✕</button>
+    <h3>加一节课</h3>
+    <div class="frm">
+      <div><label>学生</label><select id="exStudent"></select></div>
+      <div><label>日期</label><input type="date" id="exDate"></div>
+      <div style="display:flex;gap:9px">
+        <div style="flex:1"><label>开始</label><input type="time" id="exTime" value="16:00"></div>
+        <div style="flex:1"><label>结束（选填）</label><input type="time" id="exEnd"></div>
+      </div>
+      <div><label>备注（选填）</label><input type="text" id="exNote" placeholder="加课 / 补课" maxlength="20"></div>
+      <div class="formerr" id="extraErr">先去「学生」页添加小朋友哦</div>
+      <button class="btn big" id="btnSaveExtra">加上这节课 ♪</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 弹层：音叉 / 节拍器 ===== -->
+<div class="mask" id="maskTuner">
+  <div class="sheet" style="position:relative">
+    <button class="close" data-close="maskTuner">✕</button>
+    <div id="tunerPane">
+      <h3>🎻 A4 音叉</h3>
+      <div class="tunerbox">
+        <div class="note">A · 440Hz</div>
+        <button class="btn big" id="btnPlayA4">▷ 播放标准音</button>
+        <div class="hz">对弦的时候用 · 依次是 G D A E</div>
+        <div style="display:flex;gap:8px">
+          <button class="btn ghost" data-tone="196.0" style="flex:1">G3</button>
+          <button class="btn ghost" data-tone="293.7" style="flex:1">D4</button>
+          <button class="btn ghost" data-tone="440.0" style="flex:1">A4</button>
+          <button class="btn ghost" data-tone="659.3" style="flex:1">E5</button>
+        </div>
+      </div>
+    </div>
+    <div id="metroPane" style="display:none">
+      <h3>🥁 节拍器</h3>
+      <div class="tunerbox">
+        <div class="pulse" id="metroPulse">🎶</div>
+        <div class="bpmdir">
+          <button class="btn ghost" id="bpmMinus">−</button>
+          <input type="number" id="bpmVal" value="72" min="30" max="220">
+          <button class="btn ghost" id="bpmPlus">＋</button>
+          <span style="font-size:12.5px;color:var(--sub)">BPM</span>
+        </div>
+        <div class="beatdots" id="beatDots"><span></span><span></span><span></span><span></span></div>
+        <button class="btn big" id="btnMetroToggle">▷ 开始打拍子</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 弹层：备份 ===== -->
+<div class="mask" id="maskBackup">
+  <div class="sheet" style="position:relative">
+    <button class="close" data-close="maskBackup">✕</button>
+    <h3 id="backupTitle">导出备份</h3>
+    <div class="frm">
+      <div id="backupHint" style="font-size:12.5px;color:var(--sub);line-height:1.7"></div>
+      <textarea id="backupText" style="min-height:110px;font-size:12px;word-break:break-all" readonly></textarea>
+      <button class="btn big" id="btnCopyCode">复制分享码</button>
+      <button class="btn ghost big" id="btnDoImport" style="display:none">导入这份课表</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 弹层：演出项目 ===== -->
+<div class="mask" id="maskProject">
+  <div class="sheet" style="position:relative">
+    <button class="close" data-close="maskProject">✕</button>
+    <h3 id="projFormTitle">新演出项目</h3>
+    <div class="frm">
+      <div><label>项目名称（乐团 + 音乐会）</label><input type="text" id="pTitle" placeholder="如：城市交响乐团 · 秋季音乐会" maxlength="24"></div>
+      <div style="display:flex;gap:9px">
+        <div style="flex:1"><label>排练费 / 次（元）</label><input type="number" id="pRfee" placeholder="如：300" min="0" inputmode="numeric"></div>
+        <div style="flex:1"><label>演出费 / 场（元）</label><input type="number" id="pCfee" placeholder="如：800" min="0" inputmode="numeric"></div>
+      </div>
+      <div><label>备注（选填）</label><input type="text" id="pNote" placeholder="指挥、曲目、联系人…" maxlength="40"></div>
+      <div class="formerr" id="projErr">给项目起个名字吧</div>
+      <button class="btn big" id="btnSaveProject">保存 ♡</button>
+      <button class="btn ghost big" id="btnDelProject" style="display:none;color:#e05c7e">🗑️ 删除这个项目（连排练演出一起）</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 弹层：排练 / 演出日程 ===== -->
+<div class="mask" id="maskEvent">
+  <div class="sheet" style="position:relative">
+    <button class="close" data-close="maskEvent">✕</button>
+    <h3 id="eventFormTitle">加排练</h3>
+    <div class="frm">
+      <div><label>属于哪个项目</label><select id="evProject"></select></div>
+      <div style="display:flex;gap:9px">
+        <div style="flex:1"><label>类型</label><select id="evKind">
+          <option value="reh">🎼 排练</option>
+          <option value="perf">✨ 演出</option>
+        </select></div>
+        <div style="flex:1.4"><label>日期</label><input type="date" id="evDate"></div>
+      </div>
+      <div style="display:flex;gap:9px">
+        <div style="flex:1"><label>开始</label><input type="time" id="evTime" value="19:00"></div>
+        <div style="flex:1"><label>结束（选填）</label><input type="time" id="evEnd" value="21:30"></div>
+      </div>
+      <div><label>地点（选填）</label><input type="text" id="evVenue" placeholder="排练厅 / 音乐厅地址" maxlength="30"></div>
+      <div><label>备注（选填）</label><input type="text" id="evNote" placeholder="重点过乐队合奏部分" maxlength="30"></div>
+      <div class="formerr" id="eventErr">要先有演出项目哦</div>
+      <button class="btn big" id="btnSaveEvent">保存 ♪</button>
+      <button class="btn ghost big" id="btnDelEvent" style="display:none;color:#e05c7e">🗑️ 删除这条日程</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 生日彩蛋 ===== -->
+<div id="splash">
+  <svg class="mel" viewBox="0 0 120 120">
+    <ellipse cx="32" cy="12" rx="11" ry="20" fill="#fff" stroke="#f3a7c3" stroke-width="3" transform="rotate(-20 32 12)"/>
+    <ellipse cx="88" cy="12" rx="11" ry="20" fill="#fff" stroke="#f3a7c3" stroke-width="3" transform="rotate(20 88 12)"/>
+    <circle cx="60" cy="62" r="44" fill="#ffb9d4"/>
+    <ellipse cx="60" cy="76" rx="33" ry="25" fill="#fff"/>
+    <circle cx="46" cy="73" r="4.5" fill="#5b4037"/><circle cx="74" cy="73" r="4.5" fill="#5b4037"/>
+    <ellipse cx="60" cy="84" rx="6" ry="4.5" fill="#ffd44d"/>
+    <g stroke="#e8938f" stroke-width="2.5" stroke-linecap="round">
+      <line x1="20" y1="76" x2="31" y2="74"/><line x1="20" y1="84" x2="31" y2="83"/>
+      <line x1="100" y1="76" x2="89" y2="74"/><line x1="100" y1="84" x2="89" y2="83"/>
+    </g>
+    <ellipse cx="35" cy="84" rx="6" ry="3.5" fill="#ffc9d8"/><ellipse cx="85" cy="84" rx="6" ry="3.5" fill="#ffc9d8"/>
+    <g transform="translate(60 20)"><path d="M0 0 L-15 -9 L-15 9 Z" fill="#ff7fae"/><path d="M0 0 L15 -9 L15 9 Z" fill="#ff7fae"/><circle r="5" fill="#ff5c96"/></g>
+  </svg>
+  <h2>🎂 生日快乐</h2>
+  <p>愿新的一岁，<br>琴声和日子都甜甜的 ♡<br><span style="font-size:12.5px;opacity:.75">—— 这个小课表，是给你的一份小心意</span></p>
+  <button class="btn big" id="btnSplashClose" style="max-width:220px">开始使用 ♡</button>
+</div>
+
+<div id="toast"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
