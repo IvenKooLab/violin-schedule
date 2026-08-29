@@ -61,10 +61,12 @@ body.t-kuromi .card{box-shadow:0 6px 18px rgba(0,0,0,.28)}
 button{font-family:inherit}
 
 /* ---------- 生日条 ---------- */
-.birthday{margin:2px 4px 0;display:flex;align-items:center;gap:8px;
+.birthday{margin:2px 4px 0;display:flex;align-items:center;gap:8px;width:calc(100% - 8px);border:none;font-family:inherit;cursor:pointer;
   background:linear-gradient(90deg,var(--accent2),var(--accent));color:var(--onaccent);
   border-radius:18px;padding:9px 14px;font-size:13.5px;
   box-shadow:0 6px 14px rgba(255,109,157,.30)}
+.birthday:active{transform:scale(.98)}
+.birthday .bd-hint{margin-left:auto;font-size:11px;opacity:.85;background:rgba(255,255,255,.28);border-radius:12px;padding:2px 8px}
 
 /* ---------- 下一节卡片 ---------- */
 .nextcard{margin:12px 4px 0;padding:15px 16px}

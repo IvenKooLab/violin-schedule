@@ -295,7 +295,7 @@ function renderToday(){
   $('todayDate').textContent = fmtCnDate(t) + (isBirthday(t) ? ' · 🎂 今天是特别的日子' : '');
   $('todayGreet').textContent = h<11?'早上好呀 ☀':(h<18?'下午好呀 🌸':'晚上好呀 🌙');
   $('birthdayWrap').innerHTML = isBirthday(t)
-    ? `<div class="birthday">🎂 生日快乐呀 · 今天也要开心一整天 ♡</div>` : '';
+    ? `<button class="birthday" onclick="showSplash()">🎂 生日快乐呀 · 今天也要开心一整天 ♡<span class="bd-hint">戳我 🎁</span></button>` : '';
 
   const items = itemsOn(t);
   const nowM = nowMin();
@@ -471,9 +471,8 @@ function renderAll(){ renderToday(); renderWeek(); renderStudents(); renderOrch(
 
 /* ---------------- 生日 ---------------- */
 function isBirthday(dateStr){ return S.meta.birthday && mmdd(dateStr)===S.meta.birthday; }
-function checkSplash(){
+function showSplash(){
   const t = todayStr();
-  if(S.meta.splashHideDate === t) return;   // 今天勾过「不再出现」
   const box = $('splash');
   if(isBirthday(t)){
     $('splashTitle').textContent = '🎂 生日快乐';
@@ -489,6 +488,7 @@ function checkSplash(){
     $('splashTitle').textContent = '♪ 今天也要元气满满';
     $('splashText').innerHTML = lines[+t.slice(8) % lines.length] + '<br><span style="font-size:12.5px;opacity:.75">' + fmtCnDate(t) + '</span>';
   }
+  box.querySelectorAll('.confetti').forEach(c=>c.remove());
   const items = ['♪','🎀','💖','⭐','🌸','🎻'];
   for(let i=0;i<18;i++){
     const sp = document.createElement('span');
@@ -501,6 +501,11 @@ function checkSplash(){
   }
   $('splashSkip').checked = false;
   box.classList.add('on');
+}
+function checkSplash(){
+  const t = todayStr();
+  if(S.meta.splashHideDate === t) return;   // 今天勾过「不再出现」
+  showSplash();
 }
 
 /* ---------------- 弹层控制 ---------------- */
