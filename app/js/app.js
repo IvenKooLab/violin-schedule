@@ -92,7 +92,7 @@ let importPayload = null;
 
 function defaults(){
   return { students:[], slots:[], log:{}, extras:[], projects:[], events:[],
-    meta:{ theme:'melody', wall:'none', birthday:'08-30', splashYear:0, seq:1, weekView:'list', sync:{url:'',token:'',auto:true,rev:0} } };
+    meta:{ theme:'melody', wall:'none', birthday:'08-30', splashYear:0, splashHideDate:'', seq:1, weekView:'list', sync:{url:'',token:'',auto:true,rev:0} } };
 }
 function persist(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){ toast('存不下了…设备存储可能被限制'); } scheduleAutoSync(); }
@@ -473,11 +473,22 @@ function renderAll(){ renderToday(); renderWeek(); renderStudents(); renderOrch(
 function isBirthday(dateStr){ return S.meta.birthday && mmdd(dateStr)===S.meta.birthday; }
 function checkSplash(){
   const t = todayStr();
-  if(!isBirthday(t)) return;
-  const y = t.slice(0,4);
-  if(S.meta.splashYear===y) return;
-  S.meta.splashYear = y; save();
+  if(S.meta.splashHideDate === t) return;   // 今天勾过「不再出现」
   const box = $('splash');
+  if(isBirthday(t)){
+    $('splashTitle').textContent = '🎂 生日快乐';
+    $('splashText').innerHTML = '愿新的一岁，<br>琴声和日子都甜甜的 ♡<br><span style="font-size:12.5px;opacity:.75">—— 这个小课表，是给你的一份小心意</span>';
+  } else {
+    const lines = [
+      '愿每节课都顺利，每个学生都乖 ♪',
+      '琴弦准，心情甜，今天也要闪闪发光 ♡',
+      '新的一天，从一段好听的旋律开始 🌸',
+      '愿今天的手型、音准和心情都在线 ♪',
+      '日子和琴声一样，慢慢练都会好听的 ♡'
+    ];
+    $('splashTitle').textContent = '♪ 今天也要元气满满';
+    $('splashText').innerHTML = lines[+t.slice(8) % lines.length] + '<br><span style="font-size:12.5px;opacity:.75">' + fmtCnDate(t) + '</span>';
+  }
   const items = ['♪','🎀','💖','⭐','🌸','🎻'];
   for(let i=0;i<18;i++){
     const sp = document.createElement('span');
@@ -488,6 +499,7 @@ function checkSplash(){
     sp.style.animationDelay = (-Math.random()*4)+'s';
     box.appendChild(sp);
   }
+  $('splashSkip').checked = false;
   box.classList.add('on');
 }
 
@@ -1305,7 +1317,10 @@ function bind(){
   $('btnSyncDown').addEventListener('click',()=>syncPull().then(m=>toast(m)).catch(e=>toast('下载失败：'+e.message)));
 
   // 生日彩蛋
-  $('btnSplashClose').addEventListener('click',()=>$('splash').classList.remove('on'));
+  $('btnSplashClose').addEventListener('click',()=>{
+    if($('splashSkip').checked){ S.meta.splashHideDate = todayStr(); save(); }
+    $('splash').classList.remove('on');
+  });
 
   // 每 30 秒刷新今日倒计时
   setInterval(()=>{ if($('page-today').classList.contains('on')) renderToday(); }, 30000);

@@ -305,6 +305,8 @@ body.t-kuromi .gcell{background:rgba(255,255,255,.06)}
 #splash.on{display:flex}
 #splash h2{font-size:34px;color:#a03058;margin:18px 0 8px;font-weight:400}
 #splash p{font-size:15px;color:#8c4a68;line-height:1.9}
+.splash-skip{display:inline-flex;align-items:center;gap:6px;margin-top:20px;color:#a03058;font-size:13px;background:rgba(255,255,255,.55);border-radius:18px;padding:6px 14px;cursor:pointer;user-select:none}
+.splash-skip input{width:16px;height:16px;accent-color:#d64580}
 #splash .btn{margin-top:26px;background:#fff;color:#d64580}
 #splash .mel{width:130px;height:130px;filter:drop-shadow(0 10px 22px rgba(160,48,88,.35));animation:floaty 3s ease-in-out infinite}
 @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
