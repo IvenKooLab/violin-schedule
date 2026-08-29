@@ -92,7 +92,7 @@ let importPayload = null;
 
 function defaults(){
   return { students:[], slots:[], log:{}, extras:[], projects:[], events:[],
-    meta:{ theme:'melody', wall:'none', birthday:'08-30', splashYear:0, seq:1, sync:{url:'',token:'',auto:true,rev:0} } };
+    meta:{ theme:'melody', wall:'none', birthday:'08-30', splashYear:0, seq:1, weekView:'list', sync:{url:'',token:'',auto:true,rev:0} } };
 }
 function persist(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){ toast('存不下了…设备存储可能被限制'); } scheduleAutoSync(); }
@@ -351,6 +351,17 @@ function renderWeek(){
   $('weekMonth').textContent = parseYmd(days[0]).getMonth()+1+'月';
   $('wkLabel').textContent = (weekOffset===0?'本周':weekOffset===1?'下周':weekOffset===-1?'上周':(weekOffset>0?`+${weekOffset} 周`:`${weekOffset} 周`))
     + ` ${fmtCnDate(days[0],false)} - ${fmtCnDate(days[6],false)}`;
+  const gridMode = S.meta.weekView === 'grid';
+  $('vList').classList.toggle('on', !gridMode);
+  $('vGrid').classList.toggle('on', gridMode);
+  $('weekList').style.display = gridMode ? 'none' : '';
+  $('weekGrid').style.display = gridMode ? '' : 'none';
+  let total = 0;
+  if(gridMode) total = renderWeekGrid(days, t);
+  else total = renderWeekList(days, t);
+  $('weekSummary').innerHTML = `<span class="pill">🎀 这一周共 ${total} 项（课+乐团）</span>`;
+}
+function renderWeekList(days, t){
   let total=0;
   $('weekList').innerHTML = days.map(d=>{
     const items = itemsOn(d);
@@ -373,7 +384,34 @@ function renderWeek(){
       <button class="addbtn" data-adddate="${d}">＋</button>
     </div>`;
   }).join('');
-  $('weekSummary').innerHTML = `<span class="pill">🎀 这一周共 ${total} 项（课+乐团）</span>`;
+  return total;
+}
+function renderWeekGrid(days, t){
+  const all = days.flatMap(d => itemsOn(d).map(l => Object.assign({}, l, { date: d })));
+  const times = [...new Set(all.map(l => l.time))].sort();
+  let html = '<div class="gtbl"><div></div>';
+  days.forEach(d=>{
+    const isT = d === t;
+    html += `<div class="ghead ${isT?'today':''}"><b>${DOW[dowMon(d)]}</b>${+d.slice(5,7)}/${+d.slice(8,10)}</div>`;
+  });
+  times.forEach(tm=>{
+    html += `<div class="gtime">${tm}</div>`;
+    days.forEach(d=>{
+      const cell = all.filter(l => l.date === d && l.time === tm);
+      html += `<div class="gcell">` + cell.map(l=>{
+        const done = lessonStatus(l)==='done';
+        const dim = done ? 'opacity:.6;text-decoration:line-through;' : '';
+        if(l.kind==='reh'||l.kind==='perf'){
+          const p = projectById(l.projectId)||{title:'?'};
+          return `<button class="gblk evt-${l.kind}" data-key="${l.key}" style="${dim}"><b>${l.kind==='reh'?'🎼':'✨'}${esc(p.title.slice(0,7))}</b><span class="t">${l.time}${lessonStatus(l)==='leave'?' ✕':''}</span></button>`;
+        }
+        const st = studentById(l.studentId)||{name:'?'};
+        return `<button class="gblk" data-key="${l.key}" style="background:${studentColor(l.studentId)};${dim}"><b>${esc(st.name)}</b><span class="t">${l.time}${l.loc?' 📍':''}</span></button>`;
+      }).join('') + `</div>`;
+    });
+  });
+  $('weekGrid').innerHTML = html + '</div>';
+  return all.filter(l=>lessonStatus(l)!=='leave').length;
 }
 
 function renderStudents(){
@@ -1135,6 +1173,11 @@ function bind(){
   });
   $('wkPrev').addEventListener('click',()=>{ weekOffset--; renderWeek(); });
   $('wkNext').addEventListener('click',()=>{ weekOffset++; renderWeek(); });
+  $('vList').addEventListener('click',()=>{ S.meta.weekView='list'; save(); renderWeek(); });
+  $('vGrid').addEventListener('click',()=>{ S.meta.weekView='grid'; save(); renderWeek(); });
+  $('weekGrid').addEventListener('click',e=>{
+    const blk = e.target.closest('.gblk'); if(blk) openItemSheet(blk.dataset.key);
+  });
 
   // 学生页
   $('btnAddStudent2').addEventListener('click',()=>openStudent());
