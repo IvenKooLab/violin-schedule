@@ -1,4 +1,4 @@
-/* 琴琴课表 · 核心逻辑 */
+/* 秋秋课表 · 核心逻辑 */
 'use strict';
 
 /* ---------------- 常量 ---------------- */
@@ -476,7 +476,7 @@ function renderThemes(){
     return `<button class="wthumb ${S.meta.wall===w.id?'sel':''}" data-wall="${w.id}" style="${style}">
       ${S.meta.wall===w.id?'<span class="using">使用中 ♡</span>':''}</button>`;
   }).join('');
-  $('aboutLine').textContent = `琴琴课表 · 数据存在这台手机里 · 记得常备份 ♡`;
+  $('aboutLine').textContent = `秋秋课表 · 数据存在这台手机里 · 记得常备份 ♡`;
 }
 
 function renderAll(){ renderToday(); renderWeek(); renderStudents(); renderOrch(); renderThemes(); }

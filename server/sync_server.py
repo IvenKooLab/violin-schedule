@@ -1,4 +1,4 @@
-"""琴琴课表 · 云同步服务器（单文件，仅 Python 标准库）
+"""秋秋课表 · 云同步服务器（单文件，仅 Python 标准库）
 
 功能：
   1. 托管 App 静态文件（app/ 目录）
@@ -141,5 +141,5 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     init()
-    print(f'琴琴课表同步服务 http://{HOST}:{PORT}  静态目录={os.path.abspath(ROOT)}  库={DB}')
+    print(f'秋秋课表同步服务 http://{HOST}:{PORT}  静态目录={os.path.abspath(ROOT)}  库={DB}')
     ThreadingHTTPServer((HOST, PORT), Handler).serve_forever()
