@@ -105,6 +105,15 @@
         </div>
         <div class="sticker" style="font-size:28px">🎨</div>
       </div>
+      <div class="tlabel">👤 我的头像（设置后显示在今日页）</div>
+      <div style="display:flex;gap:14px;align-items:center;margin:0 4px 4px">
+        <div class="sticker" id="userAvSlot" style="width:64px;height:64px;overflow:hidden"></div>
+        <div style="flex:1">
+          <label class="upbtn">📷 上传我的头像<input type="file" id="userAvFile" accept="image/*" hidden></label>
+          <button class="btn ghost" id="btnUserAvDel" style="font-size:12px;padding:6px 12px;margin-left:8px">移除</button>
+          <div class="thint" style="margin:6px 0 0;text-align:left">存在本机，不参与同步</div>
+        </div>
+      </div>
       <div class="tlabel">🎀 主题角色（换一套 = 全 App 换配色和贴纸）</div>
       <div class="tgrid" id="themeGrid"></div>
       <div class="tlabel">🔤 字体（选完立刻生效，第一次会下载一下）</div>
@@ -155,7 +164,13 @@
     <h3 id="studentFormTitle">添加学生</h3>
     <div class="frm">
       <div><label>名字</label><input type="text" id="fName" placeholder="小朋友的昵称" maxlength="10"></div>
-      <div><label>头像（点一个）</label><div class="emgrid" id="emGrid"></div></div>
+      <div><label>头像（点一个，或上传照片）</label>
+        <div id="avPrev" class="sticker" style="width:52px;height:52px;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden"></div><div class="emgrid" id="emGrid"></div>
+        <div style="display:flex;gap:10px;align-items:center;margin-top:8px">
+          <label class="upbtn">📷 上传照片做头像<input type="file" id="avatarFile" accept="image/*" hidden></label>
+          <span style="font-size:11px;color:var(--sub)">自动裁方压缩，存在手机里</span>
+        </div>
+      </div>
       <div><label>课程颜色（周课表格子和卡片都用它）</label><div class="emgrid" id="heartGrid"></div></div>
       <div><label>程度 / 级别</label><input type="text" id="fLevel" placeholder="如：英皇 3 级 / 启蒙班" maxlength="12"></div>
       <div><label>正在练的曲子</label><input type="text" id="fPiece" placeholder="如：《开塞 No.2》" maxlength="30"></div>
@@ -206,8 +221,8 @@
       <div><label>学生</label><select id="exStudent"></select></div>
       <div><label>日期</label><input type="date" id="exDate"></div>
       <div style="display:flex;gap:9px">
-        <div style="flex:1"><label>开始</label><input type="time" id="exTime" value="16:00"></div>
-        <div style="flex:1"><label>结束（选填）</label><input type="time" id="exEnd"></div>
+        <div style="flex:1"><label>开始</label><div id="exTimeBox"></div></div>
+        <div style="flex:1"><label>结束（选填）</label><div id="exEndBox"></div></div>
       </div>
       <div><label>备注（选填）</label><input type="text" id="exNote" placeholder="加课 / 补课" maxlength="20"></div>
       <div class="formerr" id="extraErr">先去「学生」页添加小朋友哦</div>

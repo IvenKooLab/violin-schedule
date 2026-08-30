@@ -39,6 +39,15 @@ body.f-sys{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino 
 .fcard .ck{position:absolute;top:8px;right:8px;width:20px;height:20px;border-radius:50%;background:var(--accent);color:var(--onaccent);font-size:12px;display:flex;align-items:center;justify-content:center}
 .fcard .fs{font-size:20px;color:var(--text)}
 
+/* ---------- 时间控件 / 头像上传 ---------- */
+/* ---------- 时间控件 / 头像上传 ---------- */
+.tsel{border:2px solid var(--chip);background:var(--card);color:var(--text);border-radius:12px;padding:8px 4px;font-size:14px;font-family:inherit;min-width:0;flex:1}
+.tsel.h{flex:1.1}
+.av{overflow:hidden}
+.av .avimg,.avimg{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+.upbtn{display:inline-flex;align-items:center;gap:5px;background:var(--chip);color:var(--text);border-radius:16px;padding:8px 14px;font-size:13px;cursor:pointer;user-select:none}
+.upbtn:active{transform:scale(.97)}
+
 /* ---------- 主题 ---------- */
 body.t-melody{--bg1:#ffe6ef;--bg2:#fff9fb;--accent:#ff6d9d;--accent2:#ff8fb3;--chip:#ffd7e5;--text:#7c4258;--sub:#b9879b;--card:#ffffff;--onaccent:#fff}
 body.t-kitty{--bg1:#fff3f4;--bg2:#ffffff;--accent:#ff5f7e;--accent2:#ff8298;--chip:#ffdde3;--text:#8c3a4a;--sub:#c08e98;--card:#ffffff;--onaccent:#fff}

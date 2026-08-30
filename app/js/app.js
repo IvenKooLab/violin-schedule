@@ -237,7 +237,11 @@ function applyTheme(){
   document.body.className = 't-'+t+' f-'+(S.meta.font||'kuaile');
   document.querySelector('meta[name=theme-color]').setAttribute('content', THEME_COLOR[t]||'#ffe6ef');
   const svg = MASCOTS[t] || MASCOTS.melody;
-  ['mascotSlot','mascotSlot2','mascotSlot3','mascotSlot4'].forEach(id=>{ const el=$(id); if(el) el.innerHTML=svg; });
+  ['mascotSlot','mascotSlot2','mascotSlot3','mascotSlot4'].forEach((id,idx)=>{
+    const el=$(id); if(!el) return;
+    el.innerHTML = (idx===0 && S.meta.userAvatar)
+      ? `<img class="avimg" src="${S.meta.userAvatar}">` : svg;
+  });
 }
 function applyWall(){
   const w = WALLS.find(x=>x.id===S.meta.wall) || WALLS[0];
@@ -286,7 +290,7 @@ function itemRowHTML(l, nowM, showRel=true){
   const detail = [ esc(st.piece||'小提琴课'), l.loc? '📍'+esc(l.loc) : '' ].filter(Boolean).join(' ');
   return `<button class="lrow ${status==='done'?'done':''} ${status==='leave'?'leave':''}" data-key="${l.key}" style="border-left:5px solid ${studentDeep(l.studentId)}">
     <span class="lt">${l.time}</span>
-    <span class="av" style="background:${studentColor(l.studentId)}">${st.emoji}</span>
+    <span class="av" style="background:${studentColor(l.studentId)}">${avInner(st)}</span>
     <span class="li"><span class="nm">${esc(st.name)}</span>
       <span class="pc">${detail}${l.extraNote?' · '+esc(l.extraNote):''}</span>
       ${l.note?`<span class="notemini">📌 ${esc(l.note)}</span>`:''}
@@ -446,7 +450,7 @@ function renderStudents(){
       return r.st==='done' ? '♥' : '<span class="off">♥</span>';
     }).join('');
     return `<button class="scard" data-sid="${s.id}" style="border-left:5px solid ${studentDeep(s.id)}">
-      <div class="top"><span class="av" style="background:${studentColor(s.id)}">${s.emoji}</span>
+      <div class="top"><span class="av" style="background:${studentColor(s.id)}">${avInner(s)}</span>
         <span style="flex:1;min-width:0"><span class="nm">${esc(s.name)}</span>
           <span class="chips"><span>${esc(s.level||'小提琴')}</span><span>🕰️ ${timeChip}</span>${s.loc?`<span>📍 ${esc(s.loc)}</span>`:''}${+s.fee>0?`<span>¥${esc(s.fee)}/节</span>`:''}</span>
         </span></div>
@@ -458,6 +462,11 @@ function renderStudents(){
   const si = $('searchInput'); if(si && q) si.value = q;
 }
 
+function renderUserAv(){
+  $('userAvSlot').innerHTML = S.meta.userAvatar
+    ? `<img class="avimg" src="${S.meta.userAvatar}">`
+    : `<span style="font-size:30px">🎻</span>`;
+}
 function renderThemes(){
   $('themeGrid').innerHTML = THEMES.map(t=>`
     <button class="tcard ${S.meta.theme===t.id?'sel':''}" data-theme="${t.id}">
@@ -479,7 +488,7 @@ function renderThemes(){
   $('aboutLine').textContent = `秋秋课表 · 数据存在这台手机里 · 记得常备份 ♡`;
 }
 
-function renderAll(){ renderToday(); renderWeek(); renderStudents(); renderOrch(); renderThemes(); }
+function renderAll(){ renderToday(); renderWeek(); renderStudents(); renderOrch(); renderThemes(); renderUserAv(); }
 
 /* ---------------- 生日 ---------------- */
 function isBirthday(dateStr){ return S.meta.birthday && mmdd(dateStr)===S.meta.birthday; }
@@ -541,7 +550,9 @@ function openStudent(id){
   $('fFee').value = st&&+st.fee>0? st.fee : '';
   $('fNote').value = st? (st.note||'') : '';
   $('studentErr').classList.remove('on');
+  pickedAvatar = st ? (st.avatar||'') : '';
   renderEmojiGrid(st? st.emoji : EMOJIS[Math.floor(Math.random()*8)]);
+  if (pickedAvatar) renderAvPreview();
   renderHeartGrid(st? st.heart : HEART_KEYS[(S.students.length)%HEART_KEYS.length]);
   renderSlotRows(st);
   $('btnDelStudent').style.display = st? 'block':'none';
@@ -550,8 +561,15 @@ function openStudent(id){
   openMask('maskStudent');
 }
 let pickedEmoji = '🐰';
+let pickedAvatar = '';
+function renderAvPreview(){
+  $('avPrev').innerHTML = pickedAvatar
+    ? `<img class="avimg" src="${pickedAvatar}">`
+    : pickedEmoji;
+}
 function renderEmojiGrid(sel){
-  pickedEmoji = sel;
+  pickedEmoji = sel; pickedAvatar = '';
+  renderAvPreview();
   $('emGrid').innerHTML = EMOJIS.map(e=>`<button type="button" class="${e===sel?'sel':''}" data-em="${e}">${e}</button>`).join('');
 }
 let pickedHeart = '💗';
@@ -562,23 +580,17 @@ function renderHeartGrid(sel){
 function renderSlotRows(st){
   const slots = st ? S.slots.filter(x=>x.studentId===st.id).sort((a,b)=>a.dow-b.dow||toMin(a.time)-toMin(b.time)) : [];
   if(slots.length===0) slots.push({dow:6,time:'10:00',end:'10:45',note:''});
-  $('slotRows').innerHTML = slots.map(()=>`
+  $('slotRows').innerHTML = slots.map(sl=>`
     <div class="slotcard">
       <div class="slotrow">
-        <select class="sr-dow">${DOW.map((d,i)=>`<option value="${i}">${d}</option>`).join('')}</select>
-        <input type="time" class="sr-time" value="10:00">
-        <input type="time" class="sr-end" value="10:45" title="结束时间">
+        <select class="sr-dow">${DOW.map((d,i)=>`<option value="${i}" ${sl.dow===i?'selected':''}>${d}</option>`).join('')}</select>
+        ${timeSelHTML(sl.time).replace('tsel','sr-time tsel')}
+        ${timeSelHTML(sl.end||'').replace('tsel','sr-end tsel')}
         <button type="button" class="del">✕</button>
       </div>
-      <input type="text" class="sr-note" maxlength="30" placeholder="备注（选填）：如 先去 301 再去 302">
+      <input type="text" class="sr-note" maxlength="30" placeholder="备注（选填）：如 先去 301 再去 302" value="${sl.note||''}">
     </div>`).join('');
-  const cards = $('slotRows').querySelectorAll('.slotcard');
-  slots.forEach((sl,i)=>{
-    cards[i].querySelector('.sr-dow').value = sl.dow;
-    cards[i].querySelector('.sr-time').value = sl.time;
-    cards[i].querySelector('.sr-end').value = sl.end||'';
-    cards[i].querySelector('.sr-note').value = sl.note||'';
-  });
+
 }
 function collectSlots(){
   const out = [];
@@ -596,7 +608,8 @@ function saveStudent(){
   const name = $('fName').value.trim();
   if(!name){ $('studentErr').classList.add('on'); return; }
   const data = {
-    name, emoji:pickedEmoji, heart:pickedHeart,
+    name, emoji:pickedEmoji, heart:pickedHeart, avatar:pickedAvatar||'',
+
     loc:$('fLoc').value.trim(),
     level:$('fLevel').value.trim(), piece:$('fPiece').value.trim(),
     fee:$('fFee').value||0, note:$('fNote').value.trim(),
@@ -635,7 +648,7 @@ function openItemSheet(key){
   currentLessonKey = key;
   const st = itemStudent(l.studentId);
   const rec = S.log[key];
-  $('lsAv').textContent = st.emoji; $('lsAv').style.background = studentColor(l.studentId);
+  $('lsAv').innerHTML = avInner(st); $('lsAv').style.background = studentColor(l.studentId);
   $('lsTitle').textContent = `${st.name} · ${timeRange(l)}`;
   const bits = [fmtCnDate(d)];
   if(l.loc) bits.push('📍'+l.loc);
@@ -723,17 +736,18 @@ function openExtra(dateStr){
   if(S.students.length===0){ toast('先去「学生」页添加小朋友哦'); switchPage('students'); return; }
   $('exStudent').innerHTML = S.students.map(s=>`<option value="${s.id}">${s.emoji} ${esc(s.name)}</option>`).join('');
   $('exDate').value = dateStr || todayStr();
-  $('exTime').value = '16:00';
-  $('exEnd').value = '16:45';
+  $('exTimeBox').innerHTML = timeSelHTML('16:00');
+  $('exEndBox').innerHTML = timeSelHTML('16:45');
   $('exNote').value = '';
   openMask('maskExtra');
 }
 function saveExtra(){
   const sid = $('exStudent').value;
   const date = $('exDate').value;
-  const time = $('exTime').value || '16:00';
+  const time = document.querySelector('#exTimeBox .tsel').value || '16:00';
+  const end = document.querySelector('#exEndBox .tsel').value || '';
   if(!sid || !date){ $('extraErr').classList.add('on'); return; }
-  S.extras.push({ id:uid(), studentId:sid, date, time, end:$('exEnd').value||'', note:$('exNote').value.trim(), ts:Date.now() });
+  S.extras.push({ id:uid(), studentId:sid, date, time, end, note:$('exNote').value.trim(), ts:Date.now() });
   save(); closeMask('maskExtra'); renderAll(); toast('加上啦 ♪');
 }
 
@@ -784,7 +798,7 @@ function openEvent(evId, preset){
   $('evProject').value = ev? ev.projectId : (preset&&preset.projectId) || S.projects[0].id;
   $('evKind').value = ev? ev.kind : (preset&&preset.kind) || 'reh';
   $('evDate').value = ev? ev.date : (preset&&preset.date) || todayStr();
-  $('evTime').value = ev? ev.time : '19:00';
+
   $('evEnd').value = ev? (ev.end||'') : '21:30';
   $('evVenue').value = ev? (ev.venue||'') : '';
   $('evNote').value = ev? (ev.note||'') : '';
@@ -995,6 +1009,30 @@ function syncFillForm(){
 const DAY_MAP = {'一':0,'二':1,'三':2,'四':3,'五':4,'六':5,'日':6,'天':6,'1':0,'2':1,'3':2,'4':3,'5':4,'6':5,'7':6};
 const DOW_NAMES = DOW;
 const TIME_RE = /(\d{1,2})\s*[:：点]\s*(\d{2})?(?:\s*[~～\-—–至到]\s*(\d{1,2})\s*[:：点]\s*(\d{2})?)?/;
+const TIME_OPTS = (() => { const a = []; for (let h = 6; h <= 23; h++) for (let m = 0; m < 60; m += 5) a.push(pad(h)+':'+pad(m)); return a; })();
+function compressSquare(dataUrl, size=240){
+  return new Promise(res=>{
+    const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas'); c.width = size; c.height = size;
+      const x = c.getContext('2d');
+      const side = Math.min(im.width, im.height);
+      x.drawImage(im, (im.width-side)/2, (im.height-side)/2, side, side, 0, 0, size, size);
+      res(c.toDataURL('image/jpeg', 0.85));
+    };
+    im.src = dataUrl;
+  });
+}
+function avInner(st){
+  return st && st.avatar
+    ? `<img class="avimg" src="${st.avatar}" alt="">`
+    : (st ? st.emoji : '🐾');
+}
+function timeSelHTML(value){
+  const v = value || '09:00';
+  if (!TIME_OPTS.includes(v)) TIME_OPTS.push(v); TIME_OPTS.sort();
+  return '<select class="tsel">' + TIME_OPTS.map(t => `<option ${t===v?'selected':''} value="${t}">${t}</option>`).join('') + '</select>';
+}
 const toPM = h => (h >= 1 && h <= 7) ? h + 12 : h;   // 备忘录习惯：1~7 点默认是下午/晚上
 
 function parseScheduleText(raw){
@@ -1219,13 +1257,20 @@ function bind(){
   // 学生表单
   $('emGrid').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) renderEmojiGrid(b.dataset.em); });
   $('heartGrid').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) renderHeartGrid(b.dataset.heart); });
+  $('avatarFile').addEventListener('change', async e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const dataUrl = await new Promise((res,rej)=>{ const fr = new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(f); });
+    pickedAvatar = await compressSquare(dataUrl, 240);
+    $('avPrev').innerHTML = `<img class="avimg" src="${pickedAvatar}">`;
+    e.target.value = '';
+  });
   $('btnAddSlot').addEventListener('click',()=>{
     const div = document.createElement('div');
     div.className='slotcard';
     div.innerHTML = `<div class="slotrow">
         <select class="sr-dow">${DOW.map((d,i)=>`<option value="${i}">${d}</option>`).join('')}</select>
-        <input type="time" class="sr-time" value="16:00">
-        <input type="time" class="sr-end" value="16:45" title="结束时间">
+        ${timeSelHTML('16:00').replace('tsel','sr-time tsel')}
+        ${timeSelHTML('16:45').replace('tsel','sr-end tsel')}
         <button type="button" class="del">✕</button>
       </div>
       <input type="text" class="sr-note" maxlength="30" placeholder="备注（选填）：如 先去 301 再去 302">`;
@@ -1339,6 +1384,20 @@ function bind(){
   $('btnSyncDown').addEventListener('click',()=>syncPull().then(m=>toast(m)).catch(e=>toast('下载失败：'+e.message)));
 
   // 生日彩蛋
+  $('userAvFile').addEventListener('change', async e=>{
+    const f = e.target.files[0]; if(!f) return;
+    const btn = e.target; btn.disabled = true;
+    try{
+      const dataUrl = await new Promise((res,rej)=>{ const fr = new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(f); });
+      S.meta.userAvatar = await compressSquare(dataUrl, 256); save();
+      renderUserAv(); renderToday();
+      toast('头像设置好啦 ♡');
+    }catch(err){ toast('图片读取失败'); }
+    btn.disabled = false; btn.value = '';
+  });
+  $('btnUserAvDel').addEventListener('click',()=>{
+    delete S.meta.userAvatar; save(); renderUserAv(); renderToday(); toast('已恢复默认头像');
+  });
   $('btnSplashClose').addEventListener('click',()=>{
     if($('splashSkip').checked){ S.meta.splashHideDate = todayStr(); save(); }
     $('splash').classList.remove('on');
