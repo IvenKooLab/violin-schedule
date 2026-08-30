@@ -219,11 +219,8 @@
     <h3>加一节课</h3>
     <div class="frm">
       <div><label>学生</label><select id="exStudent"></select></div>
-      <div><label>日期</label><input type="date" id="exDate"></div>
-      <div style="display:flex;gap:9px">
-        <div style="flex:1"><label>开始</label><div id="exTimeBox"></div></div>
-        <div style="flex:1"><label>结束（选填）</label><div id="exEndBox"></div></div>
-      </div>
+      <button type="button" class="tfield big" id="exDT">📅 点此选择日期与开始时间</button>
+      <button type="button" class="tfield big" id="exEndT">🏁 结束时间（选填，点了再选）</button>
       <div><label>备注（选填）</label><input type="text" id="exNote" placeholder="加课 / 补课" maxlength="20"></div>
       <div class="formerr" id="extraErr">先去「学生」页添加小朋友哦</div>
       <button class="btn big" id="btnSaveExtra">加上这节课 ♪</button>
@@ -311,12 +308,10 @@
           <option value="reh">🎼 排练</option>
           <option value="perf">✨ 演出</option>
         </select></div>
-        <div style="flex:1.4"><label>日期</label><input type="date" id="evDate"></div>
+        <div style="flex:1.6"><label>日期与开始时间（点此选择）</label>
+          <button type="button" class="tfield big" id="evDT">📅 选择</button></div>
       </div>
-      <div style="display:flex;gap:9px">
-        <div style="flex:1"><label>开始</label><input type="time" id="evTime" value="19:00"></div>
-        <div style="flex:1"><label>结束（选填）</label><input type="time" id="evEnd" value="21:30"></div>
-      </div>
+      <button type="button" class="tfield big" id="evEndT">🏁 结束时间（选填，点了再选）</button>
       <div><label>地点（选填）</label><input type="text" id="evVenue" placeholder="排练厅 / 音乐厅地址" maxlength="30"></div>
       <div><label>备注（选填）</label><input type="text" id="evNote" placeholder="重点过乐队合奏部分" maxlength="30"></div>
       <div class="formerr" id="eventErr">要先有演出项目哦</div>
@@ -358,6 +353,30 @@
       </div>
       <button class="btn big" id="btnDoImportSched" style="margin-top:12px">导入勾选的课程 ♡</button>
     </div>
+  </div>
+</div>
+
+<!-- ===== 弹层：日期时间选择器 ===== -->
+<div class="mask" id="maskPick">
+  <div class="sheet" style="position:relative">
+    <button class="close" id="pickClose">✕</button>
+    <h3 id="pickTitle">选择时间</h3>
+    <div id="pickCalWrap" style="display:none">
+      <div class="calnav">
+        <button id="calPrev">‹</button><span id="calLabel"></span><button id="calNext">›</button>
+      </div>
+      <div class="calgrid" id="calDow">
+        <span class="cdow">一</span><span class="cdow">二</span><span class="cdow">三</span><span class="cdow">四</span><span class="cdow">五</span><span class="cdow">六</span><span class="cdow">日</span>
+      </div>
+      <div class="calgrid" id="calGrid"></div>
+    </div>
+    <div class="pdisp" id="pickDisp">--:--</div>
+    <div class="chipgrid" id="chipGrid"></div>
+    <div class="fine">
+      <button type="button" id="fM5">− 5 分钟</button>
+      <button type="button" id="fP5">＋ 5 分钟</button>
+    </div>
+    <button class="btn big" id="pickOk" style="margin-top:14px">确定</button>
   </div>
 </div>
 

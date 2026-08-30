@@ -577,29 +577,31 @@ function renderHeartGrid(sel){
   pickedHeart = sel;
   $('heartGrid').innerHTML = HEART_KEYS.map(h=>`<button type="button" class="${h===sel?'sel':''}" data-heart="${h}" style="font-size:16px">${h}</button>`).join('');
 }
+function slotCardHTML(sl){
+  return `<div class="slotcard" data-dow="${sl.dow}" data-time="${sl.time||'10:00'}" data-end="${sl.end||''}">
+    <div class="slotrow">
+      <div class="dowchips">${DOW.map((d,i)=>`<button type="button" class="dchip ${+sl.dow===i?'on':''}" data-dow="${i}">${d.slice(1)}</button>`).join('')}</div>
+      <button type="button" class="tfield" data-f="time">🕐 ${sl.time||'10:00'}</button>
+      <button type="button" class="tfield" data-f="end">🏁 ${sl.end||'--:--'}</button>
+      <button type="button" class="del">✕</button>
+    </div>
+    <input type="text" class="sr-note" maxlength="30" placeholder="备注（选填）：如 先去 301 再去 302" value="${sl.note||''}">
+  </div>`;
+}
 function renderSlotRows(st){
   const slots = st ? S.slots.filter(x=>x.studentId===st.id).sort((a,b)=>a.dow-b.dow||toMin(a.time)-toMin(b.time)) : [];
   if(slots.length===0) slots.push({dow:6,time:'10:00',end:'10:45',note:''});
-  $('slotRows').innerHTML = slots.map(sl=>`
-    <div class="slotcard">
-      <div class="slotrow">
-        <select class="sr-dow">${DOW.map((d,i)=>`<option value="${i}" ${sl.dow===i?'selected':''}>${d}</option>`).join('')}</select>
-        ${timeSelHTML(sl.time).replace('tsel','sr-time tsel')}
-        ${timeSelHTML(sl.end||'').replace('tsel','sr-end tsel')}
-        <button type="button" class="del">✕</button>
-      </div>
-      <input type="text" class="sr-note" maxlength="30" placeholder="备注（选填）：如 先去 301 再去 302" value="${sl.note||''}">
-    </div>`).join('');
+  $('slotRows').innerHTML = slots.map(sl=>slotCardHTML(sl)).join('');
 
 }
 function collectSlots(){
   const out = [];
-  $('slotRows').querySelectorAll('.slotcard').forEach(r=>{
+  $('slotRows').querySelectorAll('.slotcard').forEach(card=>{
     out.push({
-      dow:+r.querySelector('.sr-dow').value,
-      time:r.querySelector('.sr-time').value || '10:00',
-      end:r.querySelector('.sr-end').value || '',
-      note:r.querySelector('.sr-note').value.trim(),
+      dow:+card.dataset.dow,
+      time:card.dataset.time || '10:00',
+      end:card.dataset.end || '',
+      note:card.querySelector('.sr-note').value.trim(),
     });
   });
   return out;
@@ -732,20 +734,22 @@ function editEventFromSheet(){
 }
 
 /* ---------------- 加课 ---------------- */
-function openExtra(dateStr){
+function openExtra(dateStr, keepDT){
   if(S.students.length===0){ toast('先去「学生」页添加小朋友哦'); switchPage('students'); return; }
   $('exStudent').innerHTML = S.students.map(s=>`<option value="${s.id}">${s.emoji} ${esc(s.name)}</option>`).join('');
-  $('exDate').value = dateStr || todayStr();
-  $('exTimeBox').innerHTML = timeSelHTML('16:00');
-  $('exEndBox').innerHTML = timeSelHTML('16:45');
+  const d = dateStr || todayStr();
+  $('exDT').dataset.date = d; $('exDT').dataset.time = '16:00';
+  $('exDT').textContent = `📅 ${fmtCnDate(d)} ${'16:00'}`;
+  $('exEndT').dataset.time = '16:45';
+  $('exEndT').textContent = '🏁 16:45';
   $('exNote').value = '';
   openMask('maskExtra');
 }
 function saveExtra(){
   const sid = $('exStudent').value;
   const date = $('exDate').value;
-  const time = document.querySelector('#exTimeBox .tsel').value || '16:00';
-  const end = document.querySelector('#exEndBox .tsel').value || '';
+  const time = document.querySelector('#exDT').dataset.time || '16:00';
+  const end = document.querySelector('#exEndT').dataset.time || '';
   if(!sid || !date){ $('extraErr').classList.add('on'); return; }
   S.extras.push({ id:uid(), studentId:sid, date, time, end, note:$('exNote').value.trim(), ts:Date.now() });
   save(); closeMask('maskExtra'); renderAll(); toast('加上啦 ♪');
@@ -1005,6 +1009,70 @@ function syncFillForm(){
     : '数据存在本机；配好云同步后，改任何内容都会自动同步到另一台手机 ♡';
 }
 
+/* ---------------- 日期时间选择器（Windows 日历式） ---------------- */
+const Pick = { cb:null, mode:'time', y:2026, m:1, date:null, time:'09:00', end:'' };
+
+function calGridHTML(){
+  const first = new Date(Pick.y, Pick.m-1, 1);
+  const blanks = (first.getDay()+6)%7;
+  const days = new Date(Pick.y, Pick.m, 0).getDate();
+  const today = todayStr();
+  let html = '';
+  for (let i=0;i<blanks;i++) html += '<span></span>';
+  for (let d=1; d<=days; d++){
+    const ds = `${Pick.y}-${pad(Pick.m)}-${pad(d)}`;
+    const on = Pick.date===ds;
+    const td = ds===today;
+    html += `<button type="button" class="cday ${on?'on':''} ${td?'today':''}" data-d="${ds}">${d}</button>`;
+  }
+  return html;
+}
+function renderPicker(){
+  if (Pick.mode==='datetime'){
+    $('calLabel').textContent = `${Pick.y}年${Pick.m}月`;
+    $('calGrid').innerHTML = calGridHTML();
+  }
+  $('pickDisp').textContent = (Pick.mode==='datetime' && Pick.date ? fmtCnDate(Pick.date,false)+' ' : '') + (Pick.time||'--:--');
+  $('chipGrid').innerHTML = TIME_OPTS.filter(t => t>='06:00' && t<='22:30' && (t.slice(3)==='00'||t.slice(3)==='30'))
+    .map(t => `<button type="button" class="chip ${t===Pick.time?'on':''}" data-t="${t}">${t}</button>`).join('');
+}
+function openTimePicker(opt){
+  // opt: {title, mode:'time'|'datetime', date, time, onOk(date,time)}
+  Pick.cb = opt.onOk; Pick.mode = opt.mode || 'time';
+  Pick.date = opt.date || null;
+  Pick.time = opt.time || '09:00';
+  if (Pick.date){ const d = parseYmd(Pick.date); Pick.y = d.getFullYear(); Pick.m = d.getMonth()+1; }
+  $('pickTitle').textContent = opt.title || '选择时间';
+  $('pickCalWrap').style.display = Pick.mode==='datetime' ? '' : 'none';
+  renderPicker();
+  openMask('maskPick');
+}
+function bindPicker(){
+  $('pickClose').addEventListener('click',()=>closeMask('maskPick'));
+  $('pickOk').addEventListener('click',()=>{
+    const cb = Pick.cb; closeMask('maskPick');
+    if (cb) cb(Pick.mode==='datetime' ? (Pick.date||todayStr()) : null, Pick.time);
+  });
+  $('calPrev').addEventListener('click',()=>{ Pick.m--; if(Pick.m<1){Pick.m=12;Pick.y--;} renderPicker(); });
+  $('calNext').addEventListener('click',()=>{ Pick.m++; if(Pick.m>12){Pick.m=1;Pick.y++;} renderPicker(); });
+  $('calGrid').addEventListener('click',e=>{
+    const b = e.target.closest('[data-d]'); if(!b) return;
+    Pick.date = b.dataset.d; renderPicker();
+  });
+  $('chipGrid').addEventListener('click',e=>{
+    const b = e.target.closest('[data-t]'); if(!b) return;
+    Pick.time = b.dataset.t; renderPicker();
+  });
+  $('fM5').addEventListener('click',()=>{
+    let m = toMin(Pick.time) - 5; if (m < 360) m = 360;
+    Pick.time = `${pad(Math.floor(m/60))}:${pad(m%60)}`; renderPicker();
+  });
+  $('fP5').addEventListener('click',()=>{
+    let m = toMin(Pick.time) + 5; if (m > 1435) m = 1435;
+    Pick.time = `${pad(Math.floor(m/60))}:${pad(m%60)}`; renderPicker();
+  });
+}
+
 /* ---------------- 一键导入课表（文本解析 + AI 截图识别） ---------------- */
 const DAY_MAP = {'一':0,'二':1,'三':2,'四':3,'五':4,'六':5,'日':6,'天':6,'1':0,'2':1,'3':2,'4':3,'5':4,'6':5,'7':6};
 const DOW_NAMES = DOW;
@@ -1228,6 +1296,7 @@ function bind(){
   document.querySelectorAll('#tabbar .tab').forEach(b=>b.addEventListener('click',()=>switchPage(b.dataset.page)));
 
   // 弹层关闭
+  bindPicker();
   document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>closeMask(b.dataset.close)));
   document.querySelectorAll('.mask').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m && m.id!=='maskBackup') closeMask(m.id); }));
 
@@ -1265,21 +1334,35 @@ function bind(){
     e.target.value = '';
   });
   $('btnAddSlot').addEventListener('click',()=>{
-    const div = document.createElement('div');
-    div.className='slotcard';
-    div.innerHTML = `<div class="slotrow">
-        <select class="sr-dow">${DOW.map((d,i)=>`<option value="${i}">${d}</option>`).join('')}</select>
-        ${timeSelHTML('16:00').replace('tsel','sr-time tsel')}
-        ${timeSelHTML('16:45').replace('tsel','sr-end tsel')}
-        <button type="button" class="del">✕</button>
-      </div>
-      <input type="text" class="sr-note" maxlength="30" placeholder="备注（选填）：如 先去 301 再去 302">`;
-    $('slotRows').appendChild(div);
+    const wrap = document.createElement('div');
+    wrap.innerHTML = slotCardHTML({dow:5,time:'16:00',end:'16:45',note:''});
+    $('slotRows').appendChild(wrap.firstElementChild);
   });
   $('slotRows').addEventListener('click',e=>{
-    if(e.target.classList.contains('del')){
-      const cards = $('slotRows').querySelectorAll('.slotcard');
-      if(cards.length>1) e.target.closest('.slotcard').remove();
+    const card = e.target.closest('.slotcard'); if(!card) return;
+    const del = e.target.closest('.del');
+    if(del){
+      if($('slotRows').querySelectorAll('.slotcard').length>1) card.remove();
+      return;
+    }
+    const dc = e.target.closest('.dchip');
+    if(dc){
+      card.dataset.dow = dc.dataset.dow;
+      card.querySelectorAll('.dchip').forEach(x=>x.classList.toggle('on', x===dc));
+      return;
+    }
+    const tf = e.target.closest('.tfield');
+    if(tf){
+      const isEnd = tf.dataset.f==='end';
+      openTimePicker({
+        mode:'time',
+        title: isEnd ? '选择结束时间' : '选择开始时间',
+        time: card.dataset[isEnd?'end':'time'],
+        onOk:(d,t)=>{
+          if(isEnd){ card.dataset.end = t; } else { card.dataset.time = t; }
+          tf.innerHTML = (isEnd?'🏁 ':'🕐 ') + (t || '--:--');
+        }
+      });
     }
   });
   $('btnSaveStudent').addEventListener('click',saveStudent);
@@ -1293,6 +1376,16 @@ function bind(){
   $('btnDelExtra').addEventListener('click',delExtra);
   $('btnEditEvent').addEventListener('click',editEventFromSheet);
   $('btnSaveExtra').addEventListener('click',saveExtra);
+  $('exDT').addEventListener('click',()=>{
+    openTimePicker({mode:'datetime', title:'选择日期与开始时间',
+      date:$('exDT').dataset.date, time:$('exDT').dataset.time,
+      onOk:(d,t)=>{ $('exDT').dataset.date=d; $('exDT').dataset.time=t;
+        $('exDT').textContent = `📅 ${fmtCnDate(d)} ${t}`; }});
+  });
+  $('exEndT').addEventListener('click',()=>{
+    openTimePicker({mode:'time', title:'选择结束时间', time:$('exEndT').dataset.time,
+      onOk:(t_)=>{ $('exEndT').dataset.time = t_; $('exEndT').textContent = '🏁 ' + (t_||'--:--'); }});
+  });
 
   // 乐团：项目与日程
   $('btnAddProject').addEventListener('click',()=>openProject());
@@ -1426,8 +1519,10 @@ function init(){
     setTimeout(()=>{ syncPull().catch(()=>{}); }, 1500);
   }
 
-  // 注册 Service Worker：任何 http(s) 环境都注册（离线可用的核心）
-  if('serviceWorker' in navigator && location.protocol.startsWith('http')){
+  // 注册 Service Worker：正式域名（HTTPS）才注册；本机/局域网开发不缓存
+  const host = location.hostname;
+  const isLocal = host==='localhost' || host==='127.0.0.1' || /^(192|10)\./.test(host) || host.endsWith('.local');
+  if('serviceWorker' in navigator && location.protocol.startsWith('http') && !isLocal){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
 

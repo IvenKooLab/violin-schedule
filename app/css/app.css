@@ -48,6 +48,30 @@ body.f-sys{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino 
 .upbtn{display:inline-flex;align-items:center;gap:5px;background:var(--chip);color:var(--text);border-radius:16px;padding:8px 14px;font-size:13px;cursor:pointer;user-select:none}
 .upbtn:active{transform:scale(.97)}
 
+/* ---------- 日期时间选择器 / 可点字段 ---------- */
+/* ---------- 日期时间选择器 / 可点字段 ---------- */
+.tfield{display:block;width:100%;text-align:left;background:var(--card);border:2px solid var(--chip);color:var(--text);border-radius:14px;padding:10px 12px;font-size:14px;font-family:inherit;cursor:pointer;min-width:0}
+.tfield:active{transform:scale(.985)}
+.tfield.big{border-radius:18px}
+.calnav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:8px}
+.calnav button{background:var(--card);border:2px solid var(--chip);color:var(--text);border-radius:12px;width:36px;height:30px;font-size:15px;cursor:pointer}
+.calnav span{font-size:15px;color:var(--text);min-width:110px;text-align:center}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:6px}
+.cdow{font-size:10.5px;color:var(--sub);text-align:center;padding:2px 0}
+.cday{aspect-ratio:1;border:none;background:var(--card);border-radius:10px;font-size:13px;color:var(--text);cursor:pointer;font-family:inherit}
+.cday:active{transform:scale(.92)}
+.cday.on{background:var(--accent);color:var(--onaccent);font-weight:700}
+.cday.today{box-shadow:inset 0 0 0 2px var(--accent)}
+.pdisp{font-size:34px;text-align:center;color:var(--accent);margin:6px 0 10px;letter-spacing:1px}
+.chipgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;max-height:190px;overflow-y:auto}
+.chip{border:2px solid var(--chip);background:var(--card);color:var(--text);border-radius:12px;padding:9px 0;font-size:13px;cursor:pointer;font-family:inherit}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--onaccent);font-weight:700}
+.fine{display:flex;gap:10px;justify-content:center;margin-top:10px}
+.fine button{background:var(--chip);color:var(--text);border:none;border-radius:14px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit}
+.dowchips{display:flex;gap:4px;flex:1;min-width:0}
+.dchip{flex:1;min-width:0;border:2px solid var(--chip);background:var(--card);border-radius:10px;padding:7px 0;font-size:11px;cursor:pointer;color:var(--sub);font-family:inherit;text-align:center}
+.dchip.on{background:var(--accent);border-color:var(--accent);color:var(--onaccent);font-weight:700}
+
 /* ---------- 主题 ---------- */
 body.t-melody{--bg1:#ffe6ef;--bg2:#fff9fb;--accent:#ff6d9d;--accent2:#ff8fb3;--chip:#ffd7e5;--text:#7c4258;--sub:#b9879b;--card:#ffffff;--onaccent:#fff}
 body.t-kitty{--bg1:#fff3f4;--bg2:#ffffff;--accent:#ff5f7e;--accent2:#ff8298;--chip:#ffdde3;--text:#8c3a4a;--sub:#c08e98;--card:#ffffff;--onaccent:#fff}
