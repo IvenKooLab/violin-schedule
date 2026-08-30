@@ -5,93 +5,86 @@
 <title>秋秋课表 · 宣传图</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{
+body{background:#0f0c12}
+.board{width:1850px;height:1080px;overflow:hidden;position:relative;
   font-family:'PingFang SC','Microsoft YaHei',sans-serif;
-  background:#1b1522;
+  background:#1b1522;color:#f2e9f0;
   background-image:
     radial-gradient(circle at 12% 8%, rgba(255,143,179,.10) 0 220px, transparent 240px),
     radial-gradient(circle at 88% 30%, rgba(150,190,255,.08) 0 200px, transparent 220px),
-    radial-gradient(circle at 40% 90%, rgba(255,143,179,.07) 0 260px, transparent 280px);
-  color:#f2e9f0;padding:40px 30px 60px;
-}
-.wrap{max-width:1760px;margin:0 auto}
-.hero{text-align:center;margin-bottom:10px}
-.hero h1{font-size:42px;color:#ffb9d4;letter-spacing:2px}
-.hero p{margin-top:10px;font-size:16px;color:#c9b3c4}
-.sec{margin-top:34px}
-.sec-t{font-size:24px;color:#ffc3da;margin-bottom:6px;text-align:center}
-.sec-s{font-size:14px;color:#a98ea3;text-align:center;margin-bottom:24px}
-.row{display:flex;gap:36px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
-.item{display:flex;flex-direction:column;align-items:center;gap:12px}
-.item h3{font-size:17px;color:#ffd7e7}
-.item p{font-size:13px;color:#b39aae;max-width:350px;text-align:center;line-height:1.7}
-.phone{
-  width:348px;height:742px;background:#151217;border-radius:56px;padding:9px;
-  box-shadow:0 24px 54px rgba(0,0,0,.55), 0 0 0 2px #3a3140;position:relative;flex-shrink:0;
-}
-.phone img.shot{width:100%;height:100%;border-radius:47px;object-fit:cover;display:block}
-.island{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:106px;height:28px;background:#151217;border-radius:17px;z-index:5}
-footer{margin-top:44px;text-align:center;font-size:14px;color:#cfb3c2;line-height:2}
-footer .big{font-size:18px;color:#ffc3da}
+    radial-gradient(circle at 40% 90%, rgba(255,143,179,.07) 0 260px, transparent 280px);}
+.hero{text-align:center;padding-top:44px}
+.hero h1{font-size:44px;color:#ffb9d4;letter-spacing:2px}
+.hero p{margin-top:12px;font-size:17px;color:#c9b3c4}
+.sec-t{font-size:25px;color:#ffc3da;margin-top:16px;text-align:center}
+.sec-s{font-size:14px;color:#a98ea3;text-align:center;margin-top:8px}
+.row{display:flex;gap:60px;justify-content:center;align-items:flex-start;margin-top:28px}
+.item{display:flex;flex-direction:column;align-items:center;gap:10px;width:470px}
+.item h3{font-size:18px;color:#ffd7e7}
+.item p{font-size:13.5px;color:#b39aae;text-align:center;line-height:1.65}
+.phone{width:330px;height:702px;background:#151217;border-radius:52px;padding:8px;
+  box-shadow:0 22px 50px rgba(0,0,0,.55), 0 0 0 2px #3a3140;position:relative}
+.phone img.shot{width:100%;height:100%;border-radius:44px;object-fit:cover;display:block}
+.island{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:100px;height:27px;background:#151217;border-radius:16px;z-index:5}
+.foot{position:absolute;bottom:38px;left:0;right:0;text-align:center;font-size:14px;color:#cfb3c2;line-height:1.9}
+.foot .big{font-size:19px;color:#ffc3da;margin-bottom:8px}
+.hint{position:absolute;bottom:6px;right:14px;font-size:11px;color:#5e5266}
 </style>
 </head>
 <body>
-<div class="wrap">
 
-<div class="hero">
-  <h1>🎻 秋秋课表 🎀</h1>
-  <p>给小提琴老师的可爱风课表 · 美乐蒂 / 凯蒂猫主题 · 8.30 生日快乐 🎂</p>
-</div>
-
-<div class="sec">
-  <div class="sec-t">六个页面 · 每一个都为小提琴老师设计 🎀</div>
-  <div class="sec-s">今日课 · 周课表 · 学生档案 · 乐团演出 · 主题换装 · 上课打卡</div>
+<div class="board" id="b1">
+  <div class="hero">
+    <h1>🎻 秋秋课表 🎀</h1>
+    <p>给小提琴老师的可爱风课表 · 美乐蒂 / 凯蒂猫主题 · 8.30 生日快乐 🎂</p>
+  </div>
+  <div class="sec-t">今日课 · 周课表 · 学生档案 —— 每天打开最先看的三件事</div>
+  <div class="sec-s">地点、倒计时、小记录，都放在最顺手的位置</div>
   <div class="row">
-
     <div class="item">
-      <div class="phone"><div class="island"></div><img class="shot" src="promo_today.png" alt=""></div>
+      <div class="phone"><div class="island"></div><img class="shot" src="promo_today.png"></div>
       <h3>🏠 今日课程</h3>
-      <p>下一节还有多久、在哪儿上课，一眼看到；上完打卡还能写一句小记录</p>
+      <p>下一节还有多久、在哪儿上课，一眼看到<br>上完打卡还能写一句小记录</p>
     </div>
-
     <div class="item">
-      <div class="phone"><div class="island"></div><img class="shot" src="promo_week.png" alt=""></div>
+      <div class="phone"><div class="island"></div><img class="shot" src="promo_week.png"></div>
       <h3>🗓️ 周课表 · 网格</h3>
-      <p>一周的课铺成彩色格子，学生的颜色就是格子的颜色；乐团排练演出也在里面</p>
+      <p>一周的课铺成彩色格子，学生的颜色就是格子的颜色<br>乐团排练演出也在里面</p>
     </div>
-
     <div class="item">
-      <div class="phone"><div class="island"></div><img class="shot" src="promo_students.png" alt=""></div>
+      <div class="phone"><div class="island"></div><img class="shot" src="promo_students.png"></div>
       <h3>🎀 学生档案</h3>
-      <p>程度、固定时间、地点、正在练的曲子和练习进度，上课前扫一眼就够</p>
+      <p>程度、固定时间、地点、正在练的曲子和练习进度<br>上课前扫一眼就够</p>
     </div>
-
-    <div class="item">
-      <div class="phone"><div class="island"></div><img class="shot" src="promo_orch.png" alt=""></div>
-      <h3>🎼 乐团 · 演出</h3>
-      <p>一场音乐会带 N 次排练：排练费按次、演出费按场，出勤了自动算进月账本</p>
-    </div>
-
-    <div class="item">
-      <div class="phone"><div class="island"></div><img class="shot" src="promo_themes.png" alt=""></div>
-      <h3>🎨 主题 · 壁纸 · 字体</h3>
-      <p>美乐蒂 / 凯蒂猫 / 库洛米 / 玉桂狗四套主题一键换装，壁纸和可爱字体也随便挑</p>
-    </div>
-
-    <div class="item">
-      <div class="phone"><div class="island"></div><img class="shot" src="promo_sheet.png" alt=""></div>
-      <h3>📝 上课打卡</h3>
-      <p>一节课一张小卡片：时间、地点、转场提醒都写在上面，下课顺手记一笔</p>
-    </div>
-
   </div>
 </div>
 
-<footer>
-  <div class="big">🎂 8月30日 · 一个粉粉的、只属于她的小课表</div>
-  今日课 · 周课表 · 学生档案 · 乐团演出 · 课时小账本 · 换主题换壁纸换字体 · 还有生日彩蛋 ♡
-</footer>
-
+<div class="board" id="b2">
+  <div class="sec-t" style="margin-top:56px">乐团演出 · 主题换装 · 上课打卡 —— 该记的都帮你记着</div>
+  <div class="sec-s">排练费按次、演出费按场，出勤了自动算进月账本 ♪</div>
+  <div class="row">
+    <div class="item">
+      <div class="phone"><div class="island"></div><img class="shot" src="promo_orch.png"></div>
+      <h3>🎼 乐团 · 演出</h3>
+      <p>一场音乐会带 N 次排练：排练费按次、演出费按场<br>出勤了自动算进月账本</p>
+    </div>
+    <div class="item">
+      <div class="phone"><div class="island"></div><img class="shot" src="promo_themes.png"></div>
+      <h3>🎨 主题 · 壁纸 · 字体</h3>
+      <p>美乐蒂 / 凯蒂猫 / 库洛米 / 玉桂狗四套主题一键换装<br>壁纸和可爱字体也随便挑</p>
+    </div>
+    <div class="item">
+      <div class="phone"><div class="island"></div><img class="shot" src="promo_sheet.png"></div>
+      <h3>📝 上课打卡</h3>
+      <p>一节课一张小卡片：时间、地点、转场提醒都写在上面<br>下课顺手记一笔</p>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="big">🎂 8月30日 · 一个粉粉的、只属于她的小课表</div>
+    今日课 · 周课表 · 学生档案 · 乐团演出 · 课时小账本 · 换主题换壁纸换字体 · 还有生日彩蛋 ♡
+  </div>
+  <div class="hint">qinqin · 2026</div>
 </div>
+
 </body>
 </html>
