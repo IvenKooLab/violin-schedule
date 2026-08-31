@@ -579,8 +579,8 @@ function renderHeartGrid(sel){
 }
 function slotCardHTML(sl){
   return `<div class="slotcard" data-dow="${sl.dow}" data-time="${sl.time||'10:00'}" data-end="${sl.end||''}">
+    <div class="dowchips">${DOW.map((d,i)=>`<button type="button" class="dchip ${+sl.dow===i?'on':''}" data-dow="${i}">${d.slice(1)}</button>`).join('')}</div>
     <div class="slotrow">
-      <div class="dowchips">${DOW.map((d,i)=>`<button type="button" class="dchip ${+sl.dow===i?'on':''}" data-dow="${i}">${d.slice(1)}</button>`).join('')}</div>
       <button type="button" class="tfield" data-f="time">🕐 ${sl.time||'10:00'}</button>
       <button type="button" class="tfield" data-f="end">🏁 ${sl.end||'--:--'}</button>
       <button type="button" class="del">✕</button>

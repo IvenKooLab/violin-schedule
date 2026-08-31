@@ -68,9 +68,10 @@ body.f-sys{font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino 
 .chip.on{background:var(--accent);border-color:var(--accent);color:var(--onaccent);font-weight:700}
 .fine{display:flex;gap:10px;justify-content:center;margin-top:10px}
 .fine button{background:var(--chip);color:var(--text);border:none;border-radius:14px;padding:8px 16px;font-size:13px;cursor:pointer;font-family:inherit}
-.dowchips{display:flex;gap:4px;flex:1;min-width:0}
-.dchip{flex:1;min-width:0;border:2px solid var(--chip);background:var(--card);border-radius:10px;padding:7px 0;font-size:11px;cursor:pointer;color:var(--sub);font-family:inherit;text-align:center}
+.dowchips{display:flex;gap:5px;margin-bottom:8px}
+.dchip{flex:1;min-width:0;border:2px solid var(--chip);background:var(--card);border-radius:12px;padding:10px 0;font-size:13px;cursor:pointer;color:var(--sub);font-family:inherit;text-align:center}
 .dchip.on{background:var(--accent);border-color:var(--accent);color:var(--onaccent);font-weight:700}
+.slotcard .slotrow .del{width:40px;height:44px;flex-shrink:0}
 
 /* ---------- 主题 ---------- */
 body.t-melody{--bg1:#ffe6ef;--bg2:#fff9fb;--accent:#ff6d9d;--accent2:#ff8fb3;--chip:#ffd7e5;--text:#7c4258;--sub:#b9879b;--card:#ffffff;--onaccent:#fff}
