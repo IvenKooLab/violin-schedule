@@ -4,22 +4,17 @@
 /* ---------------- 常量 ---------------- */
 const STORE_KEY = 'qinqin_v1';
 const THEMES = [
-  { id:'melody',  name:'美乐蒂', td:'粉格纹 · 甜系',   img:'assets/wall_melody.jpg' },
-  { id:'kitty',   name:'凯蒂猫', td:'红白 · 经典',     img:'assets/wall_kitty_tall.jpg' },
-  { id:'kuromi',  name:'库洛米', td:'暗紫 · 酷酷的',   img:'assets/wall_kuromi_star.jpg' },
-  { id:'cinnamo', name:'玉桂狗', td:'云朵蓝 · 软软的', img:'assets/wall_cinnamo.jpg' },
+  { id:'melody',  name:'美乐蒂', td:'粉色 · 甜系',   g:'linear-gradient(160deg,#ffe0eb,#ffb9d4)' },
+  { id:'kitty',   name:'凯蒂猫', td:'红白 · 经典',   g:'linear-gradient(160deg,#fff3f4,#ffd6de)' },
+  { id:'kuromi',  name:'库洛米', td:'暗紫 · 酷酷的', g:'linear-gradient(160deg,#3a3342,#5c4a78)' },
+  { id:'cinnamo', name:'玉桂狗', td:'云朵蓝 · 软软的', g:'linear-gradient(160deg,#e7f3fe,#b8dbf8)' },
 ];
-const WALLS = [
+let WALLS = [
   { id:'none',    name:'纯色' },
   { id:'g1',      grad:'linear-gradient(160deg,#ffe0eb,#ffc3da)' },
-  { id:'melody',  img:'assets/wall_melody.jpg' },
-  { id:'kittyf',  img:'assets/wall_kitty_flower.jpg' },
-  { id:'kittyt',  img:'assets/wall_kitty_tall.jpg' },
-  { id:'kuromis', img:'assets/wall_kuromi_star.jpg' },
-  { id:'kuromip', img:'assets/wall_kuromi_pixel.jpg' },
-  { id:'cinnamo', img:'assets/wall_cinnamo.jpg' },
   { id:'night',   grad:'linear-gradient(160deg,#2e2837,#5c4a78)' },
 ];
+/* 图片壁纸（若有）由 probeWalls() 启动时探测后加入：自带素材不上库 */
 const EMOJIS = ['🐰','🐱','🐻','🐶','🐼','🐹','🦊','🐸','🐵','🐤','🍑','🍓','🌸','⭐','🎀','🎵'];
 const AVCOLORS = ['#ffe3ec','#ffe9d6','#e3f2ff','#e8ffe3','#f2e3ff','#fff3d6','#e0f7f4','#ffe0e0'];
 /* 课程颜色：心心色盘（学生自选，周课表/卡片/今日左边条都用它） */
@@ -244,10 +239,13 @@ function applyTheme(){
   });
 }
 function applyWall(){
-  const w = WALLS.find(x=>x.id===S.meta.wall) || WALLS[0];
   const el = $('wallpaper');
-  if(w.img){ el.style.backgroundImage = `url('${w.img}')`; el.style.display='block'; }
-  else if(w.grad){ el.style.backgroundImage = w.grad; el.style.display='block'; }
+  if (S.meta.wall === 'custom' && S.meta.customWall){
+    el.style.backgroundImage = `url('${S.meta.customWall}')`; el.style.display='block'; return;
+  }
+  const w = WALLS.find(x=>x.id===S.meta.wall);
+  if(w && w.img){ el.style.backgroundImage = `url('${w.img}')`; el.style.display='block'; }
+  else if(w && w.grad){ el.style.backgroundImage = w.grad; el.style.display='block'; }
   else { el.style.display='none'; }
 }
 
@@ -471,7 +469,7 @@ function renderThemes(){
   $('themeGrid').innerHTML = THEMES.map(t=>`
     <button class="tcard ${S.meta.theme===t.id?'sel':''}" data-theme="${t.id}">
       ${S.meta.theme===t.id?'<span class="ck">✓</span>':''}
-      <span class="img"><img src="${t.img}" alt=""></span>
+      <span class="img" style="background:${t.g};display:flex;align-items:center;justify-content:center"><span style="display:inline-block;width:44px;height:44px;transform:scale(.85);transform-origin:center">${MASCOTS[t.id]||''}</span></span>
       <span><span class="tn">${t.name}</span><span class="td" style="display:block">${t.td}</span></span>
     </button>`).join('');
   $('fontGrid').innerHTML = FONTS.map(f=>`
@@ -481,13 +479,39 @@ function renderThemes(){
       <span class="fn">${f.name}</span><span class="fd">${f.desc}</span>
     </button>`).join('');
   $('wallGrid').innerHTML = WALLS.map(w=>{
-    const style = w.img? `background-image:url('${w.img}')` : `background-image:${w.grad||'linear-gradient(160deg,var(--bg1),var(--bg2))'}`;
+    const style = w.custom ? `background-image:url('${S.meta.customWall}')`
+                : w.img ? `background-image:url('${w.img}')`
+                : `background-image:${w.grad||'linear-gradient(160deg,var(--bg1),var(--bg2))'}`;
     return `<button class="wthumb ${S.meta.wall===w.id?'sel':''}" data-wall="${w.id}" style="${style}">
       ${S.meta.wall===w.id?'<span class="using">使用中 ♡</span>':''}</button>`;
   }).join('');
   $('aboutLine').textContent = `秋秋课表 · 数据存在这台手机里 · 记得常备份 ♡`;
 }
 
+/* 探测自带图片壁纸：文件在（私有部署手动放置）才显示，开源版自动隐藏 */
+async function probeWalls(){
+  const imgs = [
+    { id:'melody',  img:'assets/wall_melody.jpg' },
+    { id:'kittyf',  img:'assets/wall_kitty_flower.jpg' },
+    { id:'kittyt',  img:'assets/wall_kitty_tall.jpg' },
+    { id:'kuromis', img:'assets/wall_kuromi_star.jpg' },
+    { id:'kuromip', img:'assets/wall_kuromi_pixel.jpg' },
+    { id:'cinnamo', img:'assets/wall_cinnamo.jpg' },
+  ];
+  const found = [];
+  for (const w of imgs){
+    const ok = await new Promise(res=>{ const i = new Image(); i.onload=()=>res(true); i.onerror=()=>res(false); i.src = w.img; });
+    if (ok) found.push(w);
+  }
+  WALLS = [
+    { id:'none',  name:'纯色' },
+    { id:'g1',    grad:'linear-gradient(160deg,#ffe0eb,#ffc3da)' },
+    ...found,
+    { id:'night', grad:'linear-gradient(160deg,#2e2837,#5c4a78)' },
+  ];
+  if (!WALLS.find(w=>w.id===S.meta.wall)) { S.meta.wall='none'; persist(); }
+  renderThemes(); applyWall();
+}
 function renderAll(){ renderToday(); renderWeek(); renderStudents(); renderOrch(); renderThemes(); renderUserAv(); }
 
 /* ---------------- 生日 ---------------- */
@@ -1078,6 +1102,23 @@ const DAY_MAP = {'一':0,'二':1,'三':2,'四':3,'五':4,'六':5,'日':6,'天':6
 const DOW_NAMES = DOW;
 const TIME_RE = /(\d{1,2})\s*[:：点]\s*(\d{2})?(?:\s*[~～\-—–至到]\s*(\d{1,2})\s*[:：点]\s*(\d{2})?)?/;
 const TIME_OPTS = (() => { const a = []; for (let h = 6; h <= 23; h++) for (let m = 0; m < 60; m += 5) a.push(pad(h)+':'+pad(m)); return a; })();
+
+function compressWide(dataUrl, maxW=1080){
+  return new Promise(res=>{
+    const im = new Image();
+    im.onload = () => {
+      if (im.width <= maxW) { res(dataUrl); return; }
+      const c = document.createElement('canvas');
+      const scale = maxW / im.width;
+      c.width = maxW; c.height = Math.round(im.height * scale);
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      res(c.toDataURL('image/jpeg', 0.72));
+    };
+    im.src = dataUrl;
+  });
+}
+function btnBusy(input, busy){ input.disabled = !!busy; }
+
 function compressSquare(dataUrl, size=240){
   return new Promise(res=>{
     const im = new Image();
@@ -1453,6 +1494,20 @@ function bind(){
   });
   $('btnDoImportSched').addEventListener('click', confirmImport);
 
+  // 自定义壁纸上传（压缩到宽1080以内，存本机）
+  $('wallFile').addEventListener('change', async e=>{
+    const f = e.target.files[0]; if(!f) return;
+    btnBusy(e.target, true);
+    try{
+      const dataUrl = await new Promise((res,rej)=>{ const fr = new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(f); });
+      S.meta.customWall = await compressSquare(dataUrl, 240); // 占位：马上替换为宽版压缩
+      S.meta.customWall = await compressWide(dataUrl);
+      S.meta.wall = 'custom'; save(); applyWall(); renderThemes();
+      toast('自定义壁纸设置好啦 ♡');
+    }catch(err){ toast('图片读取失败'); }
+    btnBusy(e.target, false); e.target.value = '';
+  });
+
   // 云同步
   $('btnSyncSave').addEventListener('click',()=>{
     S.meta.sync.url = $('syncUrl').value.trim();
@@ -1513,6 +1568,8 @@ function init(){
     }catch(e){}
   }
   setTimeout(checkSplash, 600);
+
+  probeWalls();
 
   // 已配置云同步：启动时自动拉取最新（后台静默）
   if(syncCfg().url && syncCfg().token){

@@ -1,5 +1,5 @@
 /* 秋秋课表 Service Worker：缓存应用外壳，离线也能开 */
-const CACHE = 'qinqin-v13';
+const CACHE = 'qinqin-v14';
 const ASSETS = [
   './',
   './index.html',
@@ -7,11 +7,6 @@ const ASSETS = [
   './js/app.js',
   './manifest.json',
   './assets/zcool.woff2',
-  './assets/font-huangyou.woff2',
-  './assets/font-kai.woff2',
-  './assets/icon-180.png',
-  './assets/icon-192.png',
-  './assets/icon-512.png',
   './assets/wall_melody.jpg',
   './assets/wall_melody_face.jpg',
   './assets/wall_kitty_tall.jpg',
@@ -19,7 +14,12 @@ const ASSETS = [
   './assets/wall_kuromi_star.jpg',
   './assets/wall_kuromi_stripe.jpg',
   './assets/wall_kuromi_pixel.jpg',
-  './assets/wall_cinnamo.jpg'
+  './assets/wall_cinnamo.jpg',
+  './assets/font-huangyou.woff2',
+  './assets/font-kai.woff2',
+  './assets/icon-180.png',
+  './assets/icon-192.png',
+  './assets/icon-512.png',
 ];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
