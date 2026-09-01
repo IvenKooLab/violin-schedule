@@ -931,7 +931,7 @@ function openExtra(dateStr, keepDT){
 }
 function saveExtra(){
   const sid = $('exStudent').value;
-  const date = $('exDate').value;
+  const date = document.querySelector('#exDT').dataset.date || todayStr();
   const time = document.querySelector('#exDT').dataset.time || '16:00';
   const end = document.querySelector('#exEndT').dataset.time || '';
   if(!sid || !date){ $('extraErr').classList.add('on'); return; }
@@ -985,9 +985,13 @@ function openEvent(evId, preset){
   $('evProject').innerHTML = S.projects.map(p=>`<option value="${p.id}">${esc(p.title)}</option>`).join('');
   $('evProject').value = ev? ev.projectId : (preset&&preset.projectId) || S.projects[0].id;
   $('evKind').value = ev? ev.kind : (preset&&preset.kind) || 'reh';
-  $('evDate').value = ev? ev.date : (preset&&preset.date) || todayStr();
-
-  $('evEnd').value = ev? (ev.end||'') : '21:30';
+  const d0 = ev? ev.date : (preset&&preset.date) || todayStr();
+  const t0 = ev? ev.time : '19:00';
+  $('evDT').dataset.date = d0; $('evDT').dataset.time = t0;
+  $('evDT').textContent = `📅 ${fmtCnDate(d0,false)} ${t0}`;
+  const e0 = ev? (ev.end||'') : '21:30';
+  $('evEndT').dataset.time = e0;
+  $('evEndT').textContent = '🏁 ' + (e0 || '选填');
   $('evVenue').value = ev? (ev.venue||'') : '';
   $('evNote').value = ev? (ev.note||'') : '';
   $('eventErr').classList.remove('on');
@@ -1000,8 +1004,10 @@ function saveEvent(){
   const pid = $('evProject').value;
   if(!pid){ $('eventErr').classList.add('on'); return; }
   const data = {
-    projectId:pid, kind:$('evKind').value, date:$('evDate').value || todayStr(),
-    time:$('evTime').value || '19:00', end:$('evEnd').value,
+    projectId:pid, kind:$('evKind').value,
+    date:(document.querySelector('#evDT').dataset.date) || todayStr(),
+    time:(document.querySelector('#evDT').dataset.time) || '19:00',
+    end:document.querySelector('#evEndT').dataset.time || '',
     venue:$('evVenue').value.trim(), note:$('evNote').value.trim(),
   };
   data.ts = Date.now();
@@ -1661,6 +1667,16 @@ function bind(){
       date:$('exDT').dataset.date, time:$('exDT').dataset.time,
       onOk:(d,t)=>{ $('exDT').dataset.date=d; $('exDT').dataset.time=t;
         $('exDT').textContent = `📅 ${fmtCnDate(d)} ${t}`; }});
+  });
+  $('evDT').addEventListener('click',()=>{
+    openTimePicker({mode:'datetime', title:'选择日期与开始时间',
+      date:$('evDT').dataset.date, time:$('evDT').dataset.time,
+      onOk:(d,t)=>{ $('evDT').dataset.date=d; $('evDT').dataset.time=t;
+        $('evDT').textContent = `📅 ${fmtCnDate(d,false)} ${t}`; }});
+  });
+  $('evEndT').addEventListener('click',()=>{
+    openTimePicker({mode:'time', title:'选择结束时间', time:$('evEndT').dataset.time,
+      onOk:(t_)=>{ $('evEndT').dataset.time=t_; $('evEndT').textContent='🏁 '+(t_||'选填'); }});
   });
   $('exEndT').addEventListener('click',()=>{
     openTimePicker({mode:'time', title:'选择结束时间', time:$('exEndT').dataset.time,
