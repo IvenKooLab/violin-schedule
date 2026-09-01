@@ -145,7 +145,7 @@ function lessonsOn(dateStr){
   S.extras.filter(x=>x.date===dateStr).forEach(ex=>{
     const st = studentById(ex.studentId);
     list.push({ key:dateStr+'|e'+ex.id, studentId:ex.studentId, time:ex.time, end:ex.end||'',
-      note:'', loc:(st&&st.loc)||'', kind:'extra', refId:ex.id, date:dateStr, extraNote:ex.note });
+      note:'', loc:(st&&st.loc)||'', kind:'extra', refId:ex.id, date:dateStr, extraNote:ex.note, confirmed:ex.confirmed });
   });
   list.sort((a,b)=> toMin(a.time)-toMin(b.time) || a.studentId.localeCompare(b.studentId));
   return list;
@@ -331,9 +331,9 @@ function itemRowHTML(l, nowM, showRel=true){
     <span class="lt">${l.time}</span>
     <span class="av" style="background:${studentColor(l.studentId)}">${avInner(st)}</span>
     <span class="li"><span class="nm">${esc(st.name)}</span>
-      <span class="pc">${detail}${l.extraNote?' · '+esc(l.extraNote):''}</span>
+      <span class="pc">${l.kind==='extra' && !l.confirmed ? '⏳待确认 · ' : ''}${detail}${l.extraNote?' · '+esc(l.extraNote):''}</span>
       ${l.note?`<span class="notemini">📌 ${esc(l.note)}</span>`:''}
-      ${logNote?`<span class="notemini">📝 ${esc(logNote)}</span>`:''}
+      ${note?`<span class="notemini">📝 ${esc(note)}</span>`:''}
     </span>
     ${showRel? chipFor(l,nowM) : ''}
   </button>`;
@@ -648,7 +648,7 @@ async function probeWalls(){
     ...found,
     { id:'night', grad:'linear-gradient(160deg,#2e2837,#5c4a78)' },
   ];
-  if (!WALLS.find(w=>w.id===S.meta.wall)) { S.meta.wall='none'; persist(); }
+  if (S.meta.wall !== 'custom' && S.meta.wall !== 'none' && !WALLS.find(w=>w.id===S.meta.wall)) { S.meta.wall='none'; persist(); }
   renderThemes(); applyWall();
 }
 function renderAll(){ renderToday(); renderWeek(); renderStudents(); renderOrch(); renderThemes(); renderUserAv(); }
@@ -885,7 +885,16 @@ function markDone(){
   $('btnSaveDone').textContent = '保存打卡 ✓';
 }
 function saveDone(){
+  const wasDone = S.log[currentLessonKey] && S.log[currentLessonKey].status==='done';
   S.log[currentLessonKey] = Object.assign({}, S.log[currentLessonKey], { status:'done', note:$('lsNote').value.trim(), ts:Date.now() });
+  // 课时包计数：本次新完成才 +1
+  if(!wasDone){
+    const tag = currentLessonKey.split('|')[1]; let sid = null;
+    if(tag[0]==='s'){ const sl = S.slots.find(x=>'s'+x.id===tag); if(sl) sid = sl.studentId; }
+    else if(tag[0]==='e'){ const ex = S.extras.find(x=>'e'+x.id===tag); if(ex) sid = ex.studentId; }
+    const st = sid && studentById(sid);
+    if(st && st.pass && +st.pass.total>0) st.pass.used = Math.min(+st.pass.total, (+st.pass.used||0) + 1);
+  }
   save(); closeMask('maskLesson'); renderAll(); toast('打卡完成，辛苦啦 ♡');
 }
 function markLeave(){
@@ -893,7 +902,16 @@ function markLeave(){
   save(); closeMask('maskLesson'); renderAll(); toast('已记请假 🏖️');
 }
 function clearStatus(){
+  const rec = S.log[currentLessonKey];
   delete S.log[currentLessonKey];
+  // 课时包计数：撤销的是已完成课则 -1
+  if(rec && rec.status==='done'){
+    const tag = currentLessonKey.split('|')[1]; let sid = null;
+    if(tag[0]==='s'){ const sl = S.slots.find(x=>'s'+x.id===tag); if(sl) sid = sl.studentId; }
+    else if(tag[0]==='e'){ const ex = S.extras.find(x=>'e'+x.id===tag); if(ex) sid = ex.studentId; }
+    const st = sid && studentById(sid);
+    if(st && st.pass) st.pass.used = Math.max(0, (+st.pass.used||0) - 1);
+  }
   save(); closeMask('maskLesson'); renderAll(); toast('已撤销');
 }
 function delExtra(){
@@ -1146,6 +1164,9 @@ function mergeData(local, remote){
     });
     out[k] = [...map.values()];
   });
+  // 假期：并集合并（按起止日期去重）
+  const holSet = new Set((out.holidays||[]).map(h=>h.start+'~'+h.end));
+  (remote.holidays||[]).forEach(h=>{ const k=h.start+'~'+h.end; if(!holSet.has(k)){ holSet.add(k); (out.holidays=out.holidays||[]).push(h); } });
   out.log = {};
   const keys = new Set([...Object.keys(local.log||{}), ...Object.keys(remote.log||{})]);
   keys.forEach(k=>{
