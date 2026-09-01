@@ -388,3 +388,13 @@ body.t-kuromi .gcell{background:rgba(255,255,255,.06)}
   body{background:var(--bg2)}
   #app{box-shadow:0 0 60px rgba(0,0,0,.18)}
 }
+
+/* ---------- 设置中心 / 照片网格 / 生日条 ---------- */
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}
+.pgrid .ph{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:none;padding:0;cursor:pointer}
+.pgrid .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.pgrid .ph .rm{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:10px;border:none;line-height:1}
+.bstrip{display:flex;gap:8px;overflow-x:auto;padding:2px 4px 8px;margin-bottom:4px}
+.bstrip .bitem{flex-shrink:0;background:var(--card);border-radius:16px;padding:8px 14px;font-size:12.5px;color:var(--text);box-shadow:0 3px 8px rgba(150,100,125,.08);text-align:center}
+.bstrip .bitem b{display:block;font-size:14px}
+.warn{color:#e0893a}

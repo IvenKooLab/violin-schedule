@@ -92,8 +92,8 @@ let currentLessonKey = null;
 let importPayload = null;
 
 function defaults(){
-  return { students:[], slots:[], log:{}, extras:[], projects:[], events:[],
-    meta:{ theme:'melody', wall:'none', birthday:'08-30', splashYear:0, splashHideDate:'', font:'kuaile', seq:1, weekView:'list', sync:{url:'',token:'',auto:true,rev:0} } };
+  return { students:[], slots:[], log:{}, extras:[], projects:[], events:[], holidays:[],
+    meta:{ theme:'melody', wall:'none', birthday:'08-30', splashYear:0, splashHideDate:'', font:'kuaile', userName:'', greetings:[], lessonDur:45, lastSyncAt:0, seq:1, weekView:'list', sync:{url:'',token:'',auto:true,rev:0} } };
 }
 function persist(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){} }
 function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){ toast('存不下了…设备存储可能被限制'); } scheduleAutoSync(); }
@@ -160,7 +160,12 @@ function eventsOn(dateStr){
   list.sort((a,b)=> toMin(a.time)-toMin(b.time));
   return list;
 }
-function itemsOn(dateStr){ return lessonsOn(dateStr).concat(eventsOn(dateStr)).sort((a,b)=> toMin(a.time)-toMin(b.time)); }
+function itemsOn(dateStr){
+  const hol = (S.holidays||[]).some(h => dateStr >= h.start && dateStr <= h.end);
+  return lessonsOn(dateStr).concat(eventsOn(dateStr))
+    .map(x => { x.hol = hol; return x; })
+    .sort((a,b)=> toMin(a.time)-toMin(b.time));
+}
 function isEventItem(key){ const tag=key.split('|')[1]; return tag[0]==='r'||tag[0]==='p'; }
 function itemStudent(id){ return studentById(id) || {name:'（已删除）', emoji:'🐾', piece:''}; }
 function lessonStatus(l){ const rec=S.log[l.key]; return rec ? rec.status : null; }
@@ -208,6 +213,41 @@ function monthStats(){
   });
   return { done, income, students:S.students.length };
 }
+function billData(){
+  const pre = todayStr().slice(0,7);
+  const rows = {};
+  Object.keys(S.log).forEach(k=>{
+    if(S.log[k].status!=='done' || !k.startsWith(pre)) return;
+    const [d,tag] = k.split('|'); let sid = null;
+    if(tag[0]==='s'){ const sl = S.slots.find(x=>'s'+x.id===tag); if(sl) sid = sl.studentId; }
+    else { const ex = S.extras.find(x=>'e'+x.id===tag); if(ex) sid = ex.studentId; }
+    if(!sid) return;
+    const st = studentById(sid); if(!st) return;
+    rows[sid] = rows[sid] || { name:st.name, n:0, fee:0 };
+    rows[sid].n++;
+    if (+st.fee>0) rows[sid].fee += +st.fee;
+  });
+  return Object.values(rows).sort((a,b)=> b.fee-a.fee || b.n-a.n);
+}
+function yearBars(){
+  const now = new Date(); const out = [];
+  for (let i=11;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    const pre = d.getFullYear()+'-'+pad(d.getMonth()+1);
+    let n = 0, inc = 0;
+    Object.keys(S.log).forEach(k=>{
+      if(S.log[k].status!=='done' || !k.startsWith(pre)) return;
+      n++;
+      const [dd,tag] = k.split('|'); let sid = null;
+      if(tag[0]==='s'){ const sl = S.slots.find(x=>'s'+x.id===tag); if(sl) sid = sl.studentId; }
+      else if(tag[0]==='e'){ const ex = S.extras.find(x=>'e'+x.id===tag); if(ex) sid = ex.studentId; }
+      else if(tag[0]==='r'||tag[0]==='p'){ const ev = S.events.find(x=>(x.kind==='reh'?'r':'p')+x.id===tag); if(ev){ const p = projectById(ev.projectId); if(p) inc += (ev.kind==='reh'? (+p.rfee||0):(+p.cfee||0)); } }
+      const st = sid && studentById(sid); if(st && +st.fee>0) inc += +st.fee;
+    });
+    out.push({ label:(d.getMonth()+1)+'月', n, inc });
+  }
+  return out;
+}
 function orchMonthStats(){
   const pre = todayStr().slice(0,7);
   let reh=0, perf=0, income=0;
@@ -249,9 +289,10 @@ function applyWall(){
   else { el.style.display='none'; }
 }
 
-function itemEndMin(l){ return l.end ? toMin(l.end) : toMin(l.time)+45; }
+function itemEndMin(l){ return l.end ? toMin(l.end) : toMin(l.time) + (S.meta.lessonDur||45); }
 function chipFor(l, nowM){
   const st = lessonStatus(l);
+  if(l.hol && !st) return '<span class="st-chip">放假 🏖️</span>';
   if(st==='done') return '<span class="st-chip done">已上完 ✓</span>';
   if(st==='leave') return '<span class="st-chip">请假 🏖️</span>';
   const m = toMin(l.time);
@@ -264,15 +305,17 @@ function chipFor(l, nowM){
 }
 function timeRange(l){ return l.end ? l.time+'-'+l.end : l.time; }
 function itemRowHTML(l, nowM, showRel=true){
+  const status = lessonStatus(l);
+  const hol = l.hol && !status;
+  const dim = status==='done' ? 'opacity:.6;text-decoration:line-through;' : '';
+  const note = S.log[l.key] && S.log[l.key].note;
   if(l.kind==='reh' || l.kind==='perf'){
     const p = projectById(l.projectId) || {title:'（已删除项目）', rfee:0, cfee:0};
-    const status = lessonStatus(l);
     const fee = l.kind==='reh' ? (+p.rfee||0) : (+p.cfee||0);
     const emoji = l.kind==='reh' ? '🎼' : '🎻';
     const bg = l.kind==='reh' ? '#dcebfd' : '#ffedc9';
     const sub = [ l.end ? l.time+'-'+l.end : '', l.venue, fee>0 ? '¥'+fee : '' ].filter(Boolean).join(' · ');
-    const note = S.log[l.key] && S.log[l.key].note;
-    return `<button class="lrow ${status==='done'?'done':''} ${status==='leave'?'leave':''}" data-key="${l.key}">
+    return `<button class="lrow ${status==='done'?'done':''} ${status==='leave'?'leave':''}" data-key="${l.key}" style="border-left:5px solid ${l.kind==='reh'?'#b98ae0':'#e0a53a'}">
       <span class="lt">${l.time}</span>
       <span class="av" style="background:${bg}">${emoji}</span>
       <span class="li"><span class="nm">${l.kind==='reh'?'排练':'演出'} · ${esc(p.title)}</span>
@@ -283,10 +326,8 @@ function itemRowHTML(l, nowM, showRel=true){
     </button>`;
   }
   const st = itemStudent(l.studentId);
-  const status = lessonStatus(l);
-  const logNote = S.log[l.key] && S.log[l.key].note;
   const detail = [ esc(st.piece||'小提琴课'), l.loc? '📍'+esc(l.loc) : '' ].filter(Boolean).join(' ');
-  return `<button class="lrow ${status==='done'?'done':''} ${status==='leave'?'leave':''}" data-key="${l.key}" style="border-left:5px solid ${studentDeep(l.studentId)}">
+  return `<button class="lrow ${status==='done'?'done':''} ${status==='leave'?'leave':''}" data-key="${l.key}" style="border-left:5px solid ${studentDeep(l.studentId)};${hol?'opacity:.45':''}">
     <span class="lt">${l.time}</span>
     <span class="av" style="background:${studentColor(l.studentId)}">${avInner(st)}</span>
     <span class="li"><span class="nm">${esc(st.name)}</span>
@@ -301,9 +342,12 @@ function renderToday(){
   const t = todayStr();
   const h = new Date().getHours();
   $('todayDate').textContent = fmtCnDate(t) + (isBirthday(t) ? ' · 🎂 今天是特别的日子' : '');
-  $('todayGreet').textContent = h<11?'早上好呀 ☀':(h<18?'下午好呀 🌸':'晚上好呀 🌙');
-  $('birthdayWrap').innerHTML = isBirthday(t)
-    ? `<button class="birthday" onclick="showSplash()">🎂 生日快乐呀 · 今天也要开心一整天 ♡<span class="bd-hint">戳我 🎁</span></button>` : '';
+  const who = S.meta.userName ? '，' + S.meta.userName : '';
+  $('todayGreet').textContent = (h<11?'早上好呀 ☀':(h<18?'下午好呀 🌸':'晚上好呀 🌙')) + who;
+  let banners = isBirthday(t)
+    ? `<div class="birthday" onclick="showSplash()">🎂 生日快乐呀 · 今天也要开心一整天 ♡<span class="bd-hint">戳我 🎁</span></div>` : '';
+  S.students.forEach(s => { if (s.bday && mmdd(t) === s.bday) banners += `<div class="birthday" style="background:linear-gradient(90deg,#ffb14d,#ff8f6d)">🎂 今天是 ${esc(s.name)} 的生日 · 记得送上祝福 ♡</div>`; });
+  $('birthdayWrap').innerHTML = banners;
 
   const items = itemsOn(t);
   const nowM = nowMin();
@@ -373,7 +417,7 @@ function renderWeekList(days, t){
   let total=0;
   $('weekList').innerHTML = days.map(d=>{
     const items = itemsOn(d);
-    const active = items.filter(l=>lessonStatus(l)!=='leave').length;
+    const active = items.filter(l=>lessonStatus(l)!=='leave' && !l.hol).length;
     total += active;
     const isToday = d===t;
     const chips = items.map(l=>{
@@ -431,6 +475,18 @@ function renderStudents(){
     <div class="sep"></div>
     <div><div class="big" style="font-size:19px;padding-top:4px">${ms.students}<span style="font-size:13px"> 人</span></div><div class="lbl">小朋友们</div></div>
   </div>`;
+  // 生日临近条（30 天内）
+  const t0 = todayStr();
+  const upcoming = S.students.filter(s=>s.bday).map(s=>{
+    const m = +s.bday.slice(0,2), d = +s.bday.slice(3);
+    let nxt = new Date(); nxt.setMonth(m-1, d); if (nxt < new Date(todayStr())) nxt.setFullYear(nxt.getFullYear()+1);
+    return {s, days: Math.round((nxt - new Date(todayStr()))/86400000), dateStr: nxt};
+  }).sort((a,b)=>a.days-b.days).slice(0,4);
+  const strip = upcoming.length ? `<div class="bstrip">` + upcoming.map(u=>
+    `<div class="bitem">🎂 <b>${esc(u.s.name)}</b>${u.days===0?'今天':u.days+' 天后'}<br>${u.s.bday}</div>`).join('') + `</div>` : '';
+  // 插到统计卡之后
+  setTimeout(()=>{ const ss = $('studentStats'); if (ss && !ss.nextElementSibling || ($('searchWrap') && ss.nextElementSibling !== $('searchWrap'))) {}; }, 0);
+  $('studentStats').insertAdjacentHTML('afterend', strip || '');
   const q = ($('searchInput')&&$('searchInput').value||'').trim();
   const list = S.students.filter(s=>!q || s.name.includes(q));
   if(S.students.length===0){
@@ -450,9 +506,11 @@ function renderStudents(){
     return `<button class="scard" data-sid="${s.id}" style="border-left:5px solid ${studentDeep(s.id)}">
       <div class="top"><span class="av" style="background:${studentColor(s.id)}">${avInner(s)}</span>
         <span style="flex:1;min-width:0"><span class="nm">${esc(s.name)}</span>
-          <span class="chips"><span>${esc(s.level||'小提琴')}</span><span>🕰️ ${timeChip}</span>${s.loc?`<span>📍 ${esc(s.loc)}</span>`:''}${+s.fee>0?`<span>¥${esc(s.fee)}/节</span>`:''}</span>
+          <span class="chips"><span>${esc(s.level||'小提琴')}</span><span>🕰️ ${timeChip}</span>${s.loc?`<span>📍 ${esc(s.loc)}</span>`:''}${s.phone?`<span class="phchip" data-phone="${esc(s.phone)}">📞 点击复制</span>`:''}${+s.fee>0?`<span>¥${esc(s.fee)}/节</span>`:''}</span>
+          ${s.pass&&s.pass.total>0?`<span class="chips" style="margin-top:4px"><span class="warn">课时包剩 ${s.pass.total-(s.pass.used||0)} 节</span></span>`:''}
         </span></div>
       <div class="song">🎵 ${esc(s.piece||'还没有录入曲目')}</div>
+      ${(s.pass&&s.pass.total>0 && (s.pass.total-(s.pass.used||0))<=3) ? `<div class="warn" style="font-size:12px;margin-top:6px">⏰ 课时包只剩 ${s.pass.total-(s.pass.used||0)} 节，该续费啦</div>` : ''}
       <div class="meta"><span class="hearts">${hearts}</span><span>累计 ${done} 节 · 点卡片编辑</span></div>
     </button>`;
   }).join('') || `<div class="thint">没有找到「${esc(q)}」～</div>`;
@@ -460,10 +518,91 @@ function renderStudents(){
   const si = $('searchInput'); if(si && q) si.value = q;
 }
 
+function openSettings(){
+  $('setName').value = S.meta.userName || '';
+  $('setBday').textContent = '🎂 ' + (S.meta.birthday ? S.meta.birthday.slice(0,2)+'-'+S.meta.birthday.slice(3) : '未设置');
+  $('setBday').dataset.v = S.meta.birthday || '';
+  $('setDur').value = String(S.meta.lessonDur || 45);
+  $('setGreetings').value = (S.meta.greetings && S.meta.greetings.length) ? S.meta.greetings.join('\n') : '';
+  renderUserAv();
+}
+function saveSettings(){
+  S.meta.userName = $('setName').value.trim();
+  if ($('setBday').dataset.v) S.meta.birthday = $('setBday').dataset.v;
+  S.meta.lessonDur = +$('setDur').value || 45;
+  S.meta.greetings = $('setGreetings').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  save(); renderAll(); toast('资料保存好啦 ♡');
+}
 function renderUserAv(){
   $('userAvSlot').innerHTML = S.meta.userAvatar
     ? `<img class="avimg" src="${S.meta.userAvatar}">`
     : `<span style="font-size:30px">🎻</span>`;
+}
+let holPick = { start:null, end:null };
+function renderHolidays(){
+  const list = S.holidays || [];
+  $('holList').innerHTML = list.length ? list.map((hv,i)=>`
+    <div class="slotcard" style="margin-bottom:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:14px;color:var(--text)">🏖️ ${fmtCnDate(hv.start,false)} — ${fmtCnDate(hv.end,false)}</span>
+        <button type="button" class="del" data-i="${i}" style="border:none;background:var(--chip);color:#e05c7e;width:30px;height:30px;border-radius:10px;cursor:pointer">✕</button>
+      </div>
+    </div>`).join('') : '<div class="thint" style="text-align:left">还没有假期记录</div>';
+  const f = (id,v)=>{ const el=$(id); el.textContent = v ? fmtCnDate(v,false) : '📅 选择日期'; el.dataset.v = v||''; };
+  f('holStart', holPick.start); f('holEnd', holPick.end);
+}
+function openHolidays(){
+  holPick = { start:null, end:null };
+  renderHolidays(); openMask('maskHoliday');
+}
+function renderHolidays(){
+  const list = S.holidays || [];
+  $('holList').innerHTML = list.length ? list.map((hv,i)=>`
+    <div class="slotcard" style="margin-bottom:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <span style="font-size:14px;color:var(--text)">${fmtCnDate(hv.start,false)} — ${fmtCnDate(hv.end,false)}</span>
+        <button type="button" class="holrm" data-i="${i}" style="border:none;background:var(--chip);color:#e05c7e;width:30px;height:30px;border-radius:10px;cursor:pointer">✕</button>
+      </div>
+    </div>`).join('') : '<div class="thint" style="text-align:left">还没有假期记录</div>';
+  const f = (id,v)=>{ const el=$(id); el.textContent = v ? fmtCnDate(v,false) : '选择日期'; el.dataset.v = v||''; };
+  $('holStart').textContent = holPick.start ? fmtCnDate(holPick.start,false) : '开始日期';
+  $('holStart').dataset.v = holPick.start||'';
+  $('holEnd').textContent = holPick.end ? fmtCnDate(holPick.end,false) : '结束日期';
+  $('holEnd').dataset.v = holPick.end||'';
+}
+function openHolidays(){
+  holPick = { start:null, end:null };
+  renderHolidays(); openMask('maskHoliday');
+}
+let billText = '';
+function openBill(){
+  const rows = billData();
+  const total = rows.reduce((s,r)=>s+r.fee,0), n = rows.reduce((s,r)=>s+r.n,0);
+  $('billTitle').textContent = '📊 本月账单（'+ (todayStr().slice(0,7)) +'）';
+  $('billBody').innerHTML = rows.length ? `
+    <div class="card" style="padding:12px 14px;margin-bottom:10px">
+      ${rows.map(r=>`<div style="display:flex;justify-content:space-between;font-size:13.5px;color:var(--text);padding:3px 0">
+        <span>${esc(r.name)} · ${r.n} 节</span><span>¥${r.fee}</span></div>`).join('')}
+      <div style="border-top:1.5px dashed var(--chip);margin-top:6px;padding-top:8px;display:flex;justify-content:space-between;font-weight:700;color:var(--text)">
+        <span>合计 ${n} 节</span><span>¥${total}</span></div>
+    </div>
+    <div class="thint" style="text-align:left">课时费按学生档案里的单价自动计算</div>` : '<div class="thint">本月还没有已完成的课时</div>';
+  openMask('maskBill');
+}
+function openYear(){
+  const bars = yearBars();
+  const max = Math.max(1, ...bars.map(b=>Math.max(b.n, Math.round(b.inc/100))));
+  $('billTitle').textContent = '📈 近 12 个月';
+  $('billBody').innerHTML = '<div style="display:flex;align-items:flex-end;gap:6px;height:180px;padding:0 4px">' +
+    bars.map(b=>{
+      const hN = Math.round(b.n/max*140), hI = Math.round(b.inc/Math.max(1,Math.max(...bars.map(x=>x.inc)))*140);
+      return `<div style="flex:1;text-align:center"><div style="font-size:10px;color:var(--sub)">${b.n}</div>
+        <div style="height:${Math.max(4,hN)}px;background:#ffb14d;border-radius:4px 4px 0 0;margin-bottom:2px"></div>
+        <div style="height:${Math.max(4,hI)}px;background:var(--accent);border-radius:0 0 4px 4px"></div>
+        <div style="font-size:10px;color:var(--sub);margin-top:3px">${b.label}</div></div>`;
+    }).join('') + '</div>' +
+    '<div class="thint" style="text-align:center;margin-top:6px">🟠 课时数　🔵 收入(每百元)</div>';
+  openMask('maskBill');
 }
 function renderThemes(){
   $('themeGrid').innerHTML = THEMES.map(t=>`
@@ -523,7 +662,8 @@ function showSplash(){
     $('splashTitle').textContent = '🎂 生日快乐';
     $('splashText').innerHTML = '愿新的一岁，<br>琴声和日子都甜甜的 ♡<br><span style="font-size:12.5px;opacity:.75">—— 这个小课表，是给你的一份小心意</span>';
   } else {
-    const lines = [
+    const who = S.meta.userName ? S.meta.userName + '，' : '';
+    const lines = S.meta.greetings && S.meta.greetings.length ? S.meta.greetings : [
       '愿每节课都顺利，每个学生都乖 ♪',
       '琴弦准，心情甜，今天也要闪闪发光 ♡',
       '新的一天，从一段好听的旋律开始 🌸',
@@ -531,7 +671,7 @@ function showSplash(){
       '日子和琴声一样，慢慢练都会好听的 ♡'
     ];
     $('splashTitle').textContent = '♪ 今天也要元气满满';
-    $('splashText').innerHTML = lines[+t.slice(8) % lines.length] + '<br><span style="font-size:12.5px;opacity:.75">' + fmtCnDate(t) + '</span>';
+    $('splashText').innerHTML = who + lines[+t.slice(8) % lines.length] + '<br><span style="font-size:12.5px;opacity:.75">' + fmtCnDate(t) + '</span>';
   }
   box.querySelectorAll('.confetti').forEach(c=>c.remove());
   const items = ['♪','🎀','💖','⭐','🌸','🎻'];
@@ -569,6 +709,10 @@ function openStudent(id){
   $('studentFormTitle').textContent = st? '编辑 · '+st.name : '添加学生';
   $('fName').value = st? st.name : '';
   $('fLoc').value = st? (st.loc||'') : '';
+  $('fPhone').value = st? (st.phone||'') : '';
+  $('fBday').value = st? (st.bday||'') : '';
+  $('fPass').value = st && st.pass ? (st.pass.total - st.pass.used) : '';
+  renderPhotos(st ? (st.photos||[]) : []);
   $('fLevel').value = st? (st.level||'') : '';
   $('fPiece').value = st? (st.piece||'') : '';
   $('fFee').value = st&&+st.fee>0? st.fee : '';
@@ -590,6 +734,13 @@ function renderAvPreview(){
   $('avPrev').innerHTML = pickedAvatar
     ? `<img class="avimg" src="${pickedAvatar}">`
     : pickedEmoji;
+}
+let formPhotos = [];
+function renderPhotos(list){
+  formPhotos = list.slice(0,6);
+  $('photoGrid').innerHTML = formPhotos.map((p,i)=>`
+    <button type="button" class="ph" data-i="${i}"><img src="${p}"><span class="rm">✕</span></button>`).join('')
+    + (formPhotos.length<6 ? '<label class="ph" style="display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--sub)" for="photoFile">＋</label>' : '');
 }
 function renderEmojiGrid(sel){
   pickedEmoji = sel; pickedAvatar = '';
@@ -635,7 +786,9 @@ function saveStudent(){
   if(!name){ $('studentErr').classList.add('on'); return; }
   const data = {
     name, emoji:pickedEmoji, heart:pickedHeart, avatar:pickedAvatar||'',
-
+    phone:$('fPhone').value.trim(), bday:$('fBday').value.trim(),
+    photos: formPhotos.slice(),
+    pass: { total: +$('fPass').value||0, used: 0 },
     loc:$('fLoc').value.trim(),
     level:$('fLevel').value.trim(), piece:$('fPiece').value.trim(),
     fee:$('fFee').value||0, note:$('fNote').value.trim(),
@@ -688,8 +841,12 @@ function openItemSheet(key){
   $('noteWrap').classList.remove('on');
   $('lsNote').value = rec&&rec.note ? rec.note : '';
   $('btnEditEvent').style.display = 'none';
+  $('btnConfirm').style.display = (l.kind==='extra' && !l.confirmed) ? 'block':'none';
+  $('btnConfirm').dataset.key = key;
   $('btnDelExtra').style.display = l.kind==='extra' ? 'block':'none';
   $('btnDelExtra').textContent = '🗑️ 删除这节加课';
+  $('btnResched').style.display = 'block';
+  $('btnResched').dataset.key = key;
   openMask('maskLesson');
 }
 function openEventSheet(key){
@@ -714,6 +871,9 @@ function openEventSheet(key){
   $('noteWrap').classList.remove('on');
   $('lsNote').value = rec&&rec.note ? rec.note : '';
   $('btnEditEvent').style.display = 'block';
+  $('btnConfirm').style.display = 'none';
+  $('btnResched').style.display = 'block';
+  $('btnResched').dataset.key = key;
   $('btnDelExtra').style.display = 'block';
   $('btnDelExtra').textContent = '🗑️ 删除这条日程';
   openMask('maskLesson');
@@ -1067,7 +1227,10 @@ function openTimePicker(opt){
   Pick.time = opt.time || '09:00';
   if (Pick.date){ const d = parseYmd(Pick.date); Pick.y = d.getFullYear(); Pick.m = d.getMonth()+1; }
   $('pickTitle').textContent = opt.title || '选择时间';
-  $('pickCalWrap').style.display = Pick.mode==='datetime' ? '' : 'none';
+  $('pickCalWrap').style.display = (Pick.mode==='datetime'||Pick.mode==='date') ? '' : 'none';
+  $('chipGrid').style.display = Pick.mode==='date' ? 'none' : '';
+  $('pickDisp').style.display = Pick.mode==='date' ? 'none' : '';
+  $('fM5').parentNode.style.display = Pick.mode==='date' ? 'none' : '';
   renderPicker();
   openMask('maskPick');
 }
@@ -1361,12 +1524,30 @@ function bind(){
   $('btnAddStudent2').addEventListener('click',()=>openStudent());
   $('searchInput').addEventListener('input',renderStudents);
   $('studentList').addEventListener('click',e=>{
+    const ph = e.target.closest('.phchip');
+    if(ph){ const v = ph.dataset.phone; navigator.clipboard && navigator.clipboard.writeText(v).then(()=>toast('已复制 '+v)); e.stopPropagation(); return; }
     const card = e.target.closest('.scard'); if(card) openStudent(card.dataset.sid);
   });
 
   // 学生表单
   $('emGrid').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) renderEmojiGrid(b.dataset.em); });
   $('heartGrid').addEventListener('click',e=>{ const b=e.target.closest('button'); if(b) renderHeartGrid(b.dataset.heart); });
+  $('photoFile').addEventListener('change', async e=>{
+    for (const f of e.target.files){
+      if (formPhotos.length >= 6) break;
+      const dataUrl = await new Promise((res,rej)=>{ const fr = new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(f); });
+      formPhotos.push(await compressSquare(dataUrl, 320));
+    }
+    e.target.value = '';
+    const st = editingStudentId ? studentById(editingStudentId) : null;
+    renderPhotos(formPhotos);
+  });
+  $('photoGrid').addEventListener('click',e=>{
+    const rm = e.target.closest('.rm'); if(!rm) return;
+    const i = +rm.closest('.ph').dataset.i;
+    formPhotos.splice(i,1);
+    renderPhotos(formPhotos);
+  });
   $('avatarFile').addEventListener('change', async e=>{
     const f = e.target.files[0]; if(!f) return;
     const dataUrl = await new Promise((res,rej)=>{ const fr = new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(f); });
@@ -1416,7 +1597,65 @@ function bind(){
   $('btnCancelStatus').addEventListener('click',clearStatus);
   $('btnDelExtra').addEventListener('click',delExtra);
   $('btnEditEvent').addEventListener('click',editEventFromSheet);
+  $('btnResched').addEventListener('click',()=>{
+    const key = $('btnResched').dataset.key; if(!key) return;
+    const [d0, tag] = key.split('|');
+    let time = '16:00', sid = null, kind = null;
+    if(tag[0]==='s'){ const sl = S.slots.find(x=>'s'+x.id===tag); if(sl){ sid = sl.studentId; time = sl.time; } }
+    if(tag[0]==='e'){ const ex = S.extras.find(x=>'e'+x.id===tag); if(ex){ sid = ex.studentId; time = ex.time; } }
+    if(tag[0]==='r'||tag[0]==='p'){ const ev = S.events.find(x=>(x.kind==='reh'?'r':'p')+x.id===tag); if(ev) time = ev.time; }
+    openTimePicker({mode:'datetime', title:'改期：选新日期与时间', time,
+      onOk:(nd,nt)=>{
+        if(tag[0]==='s' && sid){
+          S.extras.push({ id:uid(), studentId:sid, date:nd, time:nt, end:'', note:'调课（原 '+d0+' '+time+'）', ts:Date.now() });
+          S.log[key] = Object.assign({}, S.log[key], { status:'leave', note:'已改期至 '+nd, ts:Date.now() });
+          save(); closeMask('maskLesson'); renderAll(); toast('改好啦，新时间见 ♪');
+        } else {
+          // 乐团日程原位改期
+          const ev = S.events.find(x=>(x.kind==='reh'?'r':'p')+x.id===tag);
+          if(ev){ ev.date = nd; ev.time = nt; ev.ts = Date.now(); }
+          save(); closeMask('maskLesson'); renderAll(); toast('改好啦 ♪');
+        }
+      }});
+  });
+  $('btnConfirm').addEventListener('click',e=>{
+    const key = e.currentTarget.dataset.key; if(!key) return;
+    const tag = key.split('|')[1];
+    if(tag[0]==='e'){ const ex = S.extras.find(x=>'e'+x.id===tag); if(ex) ex.confirmed = true; }
+    save(); closeMask('maskLesson'); renderAll(); toast('已确认，稳了 ♡');
+  });
+  $('btnConfirm').addEventListener('click',e=>{
+    const key = e.currentTarget.dataset.key; if(!key) return;
+    const tag = key.split('|')[1];
+    if(tag[0]==='e'){ const ex = S.extras.find(x=>'e'+x.id===tag); if(ex) ex.confirmed = true; }
+    save(); closeMask('maskLesson'); renderAll(); toast('已确认，稳了 ♡');
+  });
+  $('btnResched').addEventListener('click',()=>{
+    const key = currentLessonKey; if(!key) return;
+    const [d0,tag] = key.split('|');
+    const l = lessonsOn(d0).find(x=>x.key===key) || eventsOn(d0).find(x=>x.key===key);
+    if(!l) return;
+    openTimePicker({mode:'datetime', title:'改期：选择新日期与时间', time:l.time,
+      onOk:(nd,nt)=>{
+        if(tag[0]==='s'){
+          const sl = S.slots.find(x=>'s'+x.id===tag);
+          S.extras.push({ id:uid(), studentId:sl.studentId, date:nd, time:nt, end:sl.end||'', note:'调课（原 '+l.time+'）', ts:Date.now() });
+          S.log[key] = Object.assign({}, S.log[key], { status:'leave', note:'已改期至 '+nd, ts:Date.now() });
+        } else if(tag[0]==='e'){
+          const ex = S.extras.find(x=>'e'+x.id===tag); ex.date = nd; ex.time = nt; ex.ts = Date.now();
+        } else {
+          const ev = S.events.find(x=>(x.kind==='reh'?'r':'p')+x.id===tag); ev.date = nd; ev.time = nt; ev.ts = Date.now();
+        }
+        save(); closeMask('maskLesson'); renderAll(); toast('改好啦，新时间见 ♪');
+      }});
+  });
   $('btnSaveExtra').addEventListener('click',saveExtra);
+  $('btnSaveProfile').addEventListener('click',saveSettings);
+  $('setBday').addEventListener('click',()=>{
+    openTimePicker({mode:'date', title:'选择你的生日（月-日）',
+      date: $('setBday').dataset.v ? '2026-'+$('setBday').dataset.v : null,
+      onOk:(d)=>{ const md = d.slice(5); $('setBday').dataset.v = md; $('setBday').textContent = '🎂 ' + md; }});
+  });
   $('exDT').addEventListener('click',()=>{
     openTimePicker({mode:'datetime', title:'选择日期与开始时间',
       date:$('exDT').dataset.date, time:$('exDT').dataset.time,
@@ -1494,6 +1733,19 @@ function bind(){
   });
   $('btnDoImportSched').addEventListener('click', confirmImport);
 
+  $('btnBill').addEventListener('click', ()=>{
+    const rows = billData();
+    const pre = todayStr().slice(0,7);
+    billText = `【秋秋课表】${pre.replace('-','年 ')}月账单\n`;
+    let n=0, fee=0;
+    rows.forEach(r=>{ n+=r.n; fee+=r.fee; billText += `${r.name}：${r.n}节` + (r.fee?` ¥${r.fee}`:'') + '\n'; });
+    billText += `合计 ${n} 节` + (fee?` ¥${fee}`:'');
+    openMask('maskBill');
+    $('billBody').innerHTML = `<textarea readonly style="width:100%;min-height:180px;font-size:13px;font-family:inherit;border:2px solid var(--chip);border-radius:14px;padding:10px;color:var(--text);background:var(--card)">${esc(billText)}</textarea>`;
+    $('billTitle').textContent = '📊 本月账单（可复制发家长）';
+  });
+  $('btnYear').addEventListener('click', openYear);
+
   // 自定义壁纸上传（压缩到宽1080以内，存本机）
   $('wallFile').addEventListener('change', async e=>{
     const f = e.target.files[0]; if(!f) return;
@@ -1570,6 +1822,30 @@ function init(){
   setTimeout(checkSplash, 600);
 
   probeWalls();
+  $('vHol').addEventListener('click', openHolidays);
+  $('holStart').addEventListener('click', () => openTimePicker({mode:'date', title:'假期开始日期', date:holPick.start, onOk:d=>{ holPick.start=d; renderHolidays(); }}));
+  $('holEnd').addEventListener('click', () => openTimePicker({mode:'date', title:'假期结束日期', date:holPick.end, onOk:d=>{ holPick.end=d; renderHolidays(); }}));
+  $('btnAddHol').addEventListener('click', () => {
+    if (!holPick.start || !holPick.end || holPick.end < holPick.start) { toast('先选好开始和结束日期'); return; }
+    (S.holidays = S.holidays||[]).push({ start:holPick.start, end:holPick.end });
+    save(); renderHolidays(); renderAll(); toast('假期安排好啦');
+  });
+  $('holList').addEventListener('click', e => {
+    const rm = e.target.closest('.holrm'); if (!rm) return;
+    S.holidays.splice(+rm.dataset.i, 1); save(); renderHolidays(); renderAll();
+  });
+  $('vHol').addEventListener('click',openHolidays);
+  $('holStart').addEventListener('click',()=>openTimePicker({mode:'date', title:'假期开始日期', date:holPick.start, onOk:d=>{ holPick.start=d; renderHolidays(); }}));
+  $('holEnd').addEventListener('click',()=>openTimePicker({mode:'date', title:'假期结束日期', date:holPick.end, onOk:d=>{ holPick.end=d; renderHolidays(); }}));
+  $('btnAddHol').addEventListener('click',()=>{
+    if(!holPick.start || !holPick.end || holPick.end < holPick.start){ toast('先选好开始和结束日期'); return; }
+    (S.holidays = S.holidays||[]).push({ start:holPick.start, end:holPick.end });
+    save(); renderHolidays(); renderAll(); toast('假期安排好啦 🏖️');
+  });
+  $('holList').addEventListener('click',e=>{
+    const rm = e.target.closest('[data-i]'); if(!rm) return;
+    S.holidays.splice(+rm.dataset.i,1); save(); renderHolidays(); renderAll();
+  });
 
   // 已配置云同步：启动时自动拉取最新（后台静默）
   if(syncCfg().url && syncCfg().token){

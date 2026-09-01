@@ -54,6 +54,7 @@
         <span class="wt" id="wkLabel">—</span>
         <button id="wkNext">›</button>
         <div class="vtoggle">
+          <button id="vHol" title="假期">🏖️</button>
           <button id="vList" class="on" title="列表">📋</button>
           <button id="vGrid" title="网格">▦</button>
         </div>
@@ -114,6 +115,21 @@
           <div class="thint" style="margin:6px 0 0;text-align:left">存在本机，不参与同步</div>
         </div>
       </div>
+      <div class="tlabel">👤 我的资料与偏好</div>
+      <div class="frm" style="margin:0 4px 4px">
+        <div><label>称呼（问候和祝福里都会叫你）</label><input type="text" id="setName" placeholder="如：秋秋老师" maxlength="12"></div>
+        <div style="display:flex;gap:9px;align-items:flex-end">
+          <div style="flex:1"><label>我的生日</label>
+            <button type="button" class="tfield" id="setBday">🎂 点击选择月-日</button></div>
+          <div style="width:130px"><label>每节课时长</label>
+            <select id="setDur" class="tsel" style="width:100%">
+              <option value="30">30 分钟</option><option value="45">45 分钟</option><option value="60">60 分钟</option>
+            </select></div>
+        </div>
+        <div><label>每日开屏祝福语（一行一句，留空恢复默认）</label>
+          <textarea id="setGreetings" style="min-height:64px" placeholder="一行一句，每天轮换一条"></textarea></div>
+        <button class="btn big" id="btnSaveProfile">保存资料 ♡</button>
+      </div>
       <div class="tlabel">🎀 主题角色（换一套 = 全 App 换配色和贴纸）</div>
       <div class="tgrid" id="themeGrid"></div>
       <div class="tlabel">🔤 字体（选完立刻生效，第一次会下载一下）</div>
@@ -127,6 +143,11 @@
       <div class="funrow">
         <button class="btn ghost" id="btnTuner">🎻 A4 音叉</button>
         <button class="btn ghost" id="btnMetro">🥁 节拍器</button>
+      </div>
+      <div class="tlabel">📄 账本</div>
+      <div style="margin:0 4px 4px;display:flex;gap:9px">
+        <button class="btn ghost" id="btnBill" style="flex:1">📊 本月账单</button>
+        <button class="btn ghost" id="btnYear" style="flex:1">📈 年度统计</button>
       </div>
       <div class="tlabel">💾 数据小管家</div>
       <button class="btn big" id="btnOneImport" style="margin-bottom:10px">✨ 一键导入课表（粘贴文本 / 截图识别）</button>
@@ -178,6 +199,16 @@
       <div><label>程度 / 级别</label><input type="text" id="fLevel" placeholder="如：英皇 3 级 / 启蒙班" maxlength="12"></div>
       <div><label>正在练的曲子</label><input type="text" id="fPiece" placeholder="如：《开塞 No.2》" maxlength="30"></div>
       <div><label>地点（去哪上这孩子的课）</label><input type="text" id="fLoc" placeholder="如：琴房 302 / 学校 / 线上" maxlength="16"></div>
+      <div style="display:flex;gap:9px">
+        <div style="flex:1"><label>家长电话</label><input type="text" id="fPhone" placeholder="家长手机号" inputmode="tel" maxlength="15"></div>
+        <div style="flex:1"><label>孩子生日（月-日）</label><input type="text" id="fBday" placeholder="如 03-15" maxlength="5"></div>
+      </div>
+      <div style="display:flex;gap:9px;align-items:flex-end">
+        <div style="flex:1"><label>课时包（剩余节数）</label><input type="number" id="fPass" placeholder="如 20" min="0" inputmode="numeric"></div>
+        <div style="flex:1.2"><label>练琴照片（最多6张）</label>
+          <label class="upbtn" style="width:100%;justify-content:center">📷 上传照片<input type="file" id="photoFile" accept="image/*" multiple hidden></label></div>
+      </div>
+      <div id="photoGrid" class="pgrid"></div>
       <div><label>每节课课时费（元，选填，用来记小账本）</label><input type="number" id="fFee" placeholder="如：300" min="0" inputmode="numeric"></div>
       <div><label>每周固定上课时间（可多个，带备注）</label><div id="slotRows"></div>
         <button type="button" class="btn ghost" id="btnAddSlot" style="margin-top:8px;font-size:13px;padding:8px 14px">＋ 加一个固定时间</button>
@@ -266,7 +297,24 @@
   </div>
 </div>
 
-<!-- ===== 弹层：备份 ===== -->
+    <!-- ===== 弹层：假期模式 ===== -->
+    <div class="mask" id="maskHoliday">
+      <div class="sheet" style="position:relative">
+        <button class="close" data-close="maskHoliday">✕</button>
+        <h3>🏖️ 假期模式</h3>
+        <div class="frm">
+          <div class="thint" style="text-align:left;margin-bottom:4px">假期范围内的课自动置灰放假，不计入课时和账本</div>
+          <div id="holList"></div>
+          <div style="display:flex;gap:9px;margin-top:6px">
+            <button type="button" class="tfield" id="holStart">📅 开始日期</button>
+            <button type="button" class="tfield" id="holEnd">📅 结束日期</button>
+          </div>
+          <button class="btn big" id="btnAddHol">＋ 添加这段假期</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== 弹层：备份 ===== -->
 <div class="mask" id="maskBackup">
   <div class="sheet" style="position:relative">
     <button class="close" data-close="maskBackup">✕</button>
@@ -359,7 +407,17 @@
   </div>
 </div>
 
-<!-- ===== 弹层：日期时间选择器 ===== -->
+<!-- ===== 弹层：账单/统计 ===== -->
+    <div class="mask" id="maskBill">
+      <div class="sheet" style="position:relative">
+        <button class="close" data-close="maskBill">✕</button>
+        <h3 id="billTitle">📊 本月账单</h3>
+        <div id="billBody"></div>
+        <button class="btn big" id="btnBillCopy" style="margin-top:12px">📋 复制账单文本</button>
+      </div>
+    </div>
+
+    <!-- ===== 弹层：日期时间选择器 ===== -->
 <div class="mask" id="maskPick">
   <div class="sheet" style="position:relative">
     <button class="close" id="pickClose">✕</button>
