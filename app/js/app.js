@@ -475,18 +475,19 @@ function renderStudents(){
     <div class="sep"></div>
     <div><div class="big" style="font-size:19px;padding-top:4px">${ms.students}<span style="font-size:13px"> 人</span></div><div class="lbl">小朋友们</div></div>
   </div>`;
-  // 生日临近条（30 天内）
-  const t0 = todayStr();
+  // 生日临近条：专用容器渲染（不堆积）；本地日期比较（当天=今天）
+  const today0 = parseYmd(todayStr());
   const upcoming = S.students.filter(s=>s.bday).map(s=>{
     const m = +s.bday.slice(0,2), d = +s.bday.slice(3);
-    let nxt = new Date(); nxt.setMonth(m-1, d); if (nxt < new Date(todayStr())) nxt.setFullYear(nxt.getFullYear()+1);
-    return {s, days: Math.round((nxt - new Date(todayStr()))/86400000), dateStr: nxt};
+    let nxt = new Date(today0.getFullYear(), m-1, d);
+    if (nxt.getFullYear() < today0.getFullYear() || (nxt.getFullYear()===today0.getFullYear() && (nxt.getMonth()<today0.getMonth() || (nxt.getMonth()===today0.getMonth() && nxt.getDate()<today0.getDate())))) {
+      nxt = new Date(today0.getFullYear()+1, m-1, d);
+    }
+    const days = Math.round((nxt - today0)/86400000);
+    return {s, days};
   }).sort((a,b)=>a.days-b.days).slice(0,4);
-  const strip = upcoming.length ? `<div class="bstrip">` + upcoming.map(u=>
-    `<div class="bitem">🎂 <b>${esc(u.s.name)}</b>${u.days===0?'今天':u.days+' 天后'}<br>${u.s.bday}</div>`).join('') + `</div>` : '';
-  // 插到统计卡之后
-  setTimeout(()=>{ const ss = $('studentStats'); if (ss && !ss.nextElementSibling || ($('searchWrap') && ss.nextElementSibling !== $('searchWrap'))) {}; }, 0);
-  $('studentStats').insertAdjacentHTML('afterend', strip || '');
+  $('bdayStrip').innerHTML = upcoming.length ? upcoming.map(u=>
+    `<div class="bitem">🎂 <b>${esc(u.s.name)}</b>${u.days===0?'今天':u.days+' 天后'}<br>${u.s.bday}</div>`).join('') : '';
   const q = ($('searchInput')&&$('searchInput').value||'').trim();
   const list = S.students.filter(s=>!q || s.name.includes(q));
   if(S.students.length===0){
@@ -788,7 +789,11 @@ function saveStudent(){
     name, emoji:pickedEmoji, heart:pickedHeart, avatar:pickedAvatar||'',
     phone:$('fPhone').value.trim(), bday:$('fBday').value.trim(),
     photos: formPhotos.slice(),
-    pass: { total: +$('fPass').value||0, used: 0 },
+    pass: (()=>{ 
+      const remain = +$('fPass').value||0;
+      const old = editingStudentId ? (studentById(editingStudentId).pass||{used:0}) : {used:0};
+      return { total: remain + (+old.used||0), used: +old.used||0 };
+    })(),
     loc:$('fLoc').value.trim(),
     level:$('fLevel').value.trim(), piece:$('fPiece').value.trim(),
     fee:$('fFee').value||0, note:$('fNote').value.trim(),
