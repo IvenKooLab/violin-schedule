@@ -1248,19 +1248,10 @@ function renderPicker(){
     $('calLabel').textContent = `${Pick.y}年${Pick.m}月`;
     $('calGrid').innerHTML = calGridHTML();
   }
-  $('pickDisp').textContent = (Pick.mode==='datetime' && Pick.date ? fmtCnDate(Pick.date,false)+' ' : '') + (Pick.time||'--:--');
-  let thtml = '';
-  for (let h = 6; h <= 23; h++){
-    thtml += `<div class="thour">${pad(h)}:00 段</div><div class="trow">`;
-    for (let m = 0; m < 60; m += 5){
-      const t = pad(h)+':'+pad(m);
-      thtml += `<button type="button" class="tchip ${t===Pick.time?'on':''}" data-t="${t}">${t}</button>`;
-    }
-    thtml += `</div>`;
-  }
-  $('chipGrid').innerHTML = thtml;
-  const on = $('chipGrid').querySelector('.tchip.on');
-  if (on) $('chipGrid').scrollTop = on.offsetTop - $('chipGrid').clientHeight/2 + on.offsetHeight/2;
+  const on30 = TIME_OPTS.filter(t => t>='06:00' && t<='22:30' && (t.slice(3)==='00'||t.slice(3)==='30')).includes(Pick.time);
+  $('pickDisp').textContent = (Pick.mode==='datetime' && Pick.date ? fmtCnDate(Pick.date,false)+' ' : '') + (Pick.time||'--:--') + (on30 ? '' : '（用下方 ±5 微调）');
+  $('chipGrid').innerHTML = TIME_OPTS.filter(t => t>='06:00' && t<='22:30' && (t.slice(3)==='00'||t.slice(3)==='30'))
+    .map(t => `<button type="button" class="chip ${t===Pick.time?'on':''}" data-t="${t}">${t}</button>`).join('');
 }
 function openTimePicker(opt){
   // opt: {title, mode:'time'|'datetime', date, time, onOk(date,time)}
@@ -1272,6 +1263,7 @@ function openTimePicker(opt){
   $('pickCalWrap').style.display = (Pick.mode==='datetime'||Pick.mode==='date') ? '' : 'none';
   $('chipGrid').style.display = Pick.mode==='date' ? 'none' : '';
   $('pickDisp').style.display = Pick.mode==='date' ? 'none' : '';
+  $('fM5').parentNode.style.display = Pick.mode==='date' ? 'none' : '';
   renderPicker();
   openMask('maskPick');
 }
@@ -1283,6 +1275,14 @@ function bindPicker(){
   });
   $('calPrev').addEventListener('click',()=>{ Pick.m--; if(Pick.m<1){Pick.m=12;Pick.y--;} renderPicker(); });
   $('calNext').addEventListener('click',()=>{ Pick.m++; if(Pick.m>12){Pick.m=1;Pick.y++;} renderPicker(); });
+  $('fM5').addEventListener('click',()=>{
+    let m = toMin(Pick.time) - 5; if (m < 360) m = 360;
+    Pick.time = `${pad(Math.floor(m/60))}:${pad(m%60)}`; renderPicker();
+  });
+  $('fP5').addEventListener('click',()=>{
+    let m = toMin(Pick.time) + 5; if (m > 1435) m = 1435;
+    Pick.time = `${pad(Math.floor(m/60))}:${pad(m%60)}`; renderPicker();
+  });
   $('calGrid').addEventListener('click',e=>{
     const b = e.target.closest('[data-d]'); if(!b) return;
     Pick.date = b.dataset.d; renderPicker();
