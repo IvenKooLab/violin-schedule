@@ -423,8 +423,11 @@
     <!-- ===== 弹层：日期时间选择器 ===== -->
 <div class="mask" id="maskPick">
   <div class="sheet" style="position:relative">
-    <button class="close" id="pickClose">✕</button>
-    <h3 id="pickTitle">选择时间</h3>
+    <div class="phead">
+      <button class="pghost" id="pickClose">✕</button>
+      <h3 id="pickTitle">选择时间</h3>
+      <button class="pok" id="pickOk">确定</button>
+    </div>
     <div id="pickCalWrap" style="display:none">
       <div class="calnav">
         <button id="calPrev">‹</button><span id="calLabel"></span><button id="calNext">›</button>
@@ -440,7 +443,6 @@
       <button type="button" id="fM5">− 5 分钟</button>
       <button type="button" id="fP5">＋ 5 分钟</button>
     </div>
-    <button class="btn big" id="pickOk" style="margin-top:14px">确定</button>
   </div>
 </div>
 
