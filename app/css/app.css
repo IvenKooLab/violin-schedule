@@ -423,7 +423,12 @@ body.t-kuromi .gcell{background:rgba(255,255,255,.06)}
 .pghost{background:var(--chip);color:var(--sub);border:none;border-radius:50%;width:30px;height:30px;font-size:13px;cursor:pointer;flex-shrink:0}
 .pok{background:var(--accent);color:var(--onaccent);border:none;border-radius:16px;padding:7px 18px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0;font-family:inherit}
 .pok:active{transform:scale(.96)}
-.chipgrid{max-height:170px}
+.chipgrid{max-height:min(46dvh,420px);position:relative}
+.thour{font-size:11px;color:var(--sub);margin:8px 2px 4px;font-weight:700}
+.trow{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:4px}
+.tchip{border:2px solid var(--chip);background:var(--card);color:var(--text);border-radius:10px;padding:8px 0;text-align:center;font-size:12.5px;cursor:pointer;font-family:inherit}
+.tchip.on{background:var(--accent);border-color:var(--accent);color:var(--onaccent);font-weight:700}
+.tchip:active{transform:scale(.94)}
 
 /* ---------- 长表单：滚动区+固定保存栏（不依赖sticky，全内核可靠） ---------- */
 .sheetflex{display:flex;flex-direction:column}
