@@ -390,7 +390,7 @@ function renderToday(){
   const wkCount = wk.reduce((n,d)=>n+itemsOn(d).filter(x=>lessonStatus(x)!=='leave').length,0);
   $('todaySummary').innerHTML = `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
     <span class="pill">📌 今日 ${items.length} 项</span><span class="pill">🗓️ 本周 ${wkCount} 项</span>
-    <button class="btn ghost" style="font-size:12px;padding:6px 12px;margin-left:auto" onclick="openExtra()">＋ 加课</button>
+    <button class="btn ghost" style="font-size:14px;padding:9px 16px;margin-left:auto" onclick="openExtra()">＋ 加课</button>
   </div>`;
 }
 function emptyHTML(o){

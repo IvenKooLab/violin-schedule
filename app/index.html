@@ -184,9 +184,10 @@
 
 <!-- ===== 弹层：学生编辑 ===== -->
 <div class="mask" id="maskStudent">
-  <div class="sheet" style="position:relative">
+  <div class="sheet sheetflex" style="position:relative">
     <button class="close" data-close="maskStudent">✕</button>
     <h3 id="studentFormTitle">添加学生</h3>
+    <div class="frmscroll">
     <div class="frm">
       <div><label>名字</label><input type="text" id="fName" placeholder="小朋友的昵称" maxlength="10"></div>
       <div><label>头像（点一个，或上传照片）</label>
@@ -216,8 +217,11 @@
       </div>
       <div><label>备注</label><textarea id="fNote" placeholder="手型要盯、家长微信是…" maxlength="60"></textarea></div>
       <div class="formerr" id="studentErr">先给小朋友起个名字吧</div>
+    </div>
+    </div>
+    <div class="savebar">
       <button class="btn big" id="btnSaveStudent">保存 ♡</button>
-      <button class="btn ghost big" id="btnDelStudent" style="display:none;color:#e05c7e">删除这个学生</button>
+      <button class="btn ghost big" id="btnDelStudent" style="display:none;color:#e05c7e">🗑️ 删除这个学生</button>
     </div>
   </div>
 </div>
