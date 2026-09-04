@@ -163,7 +163,7 @@ function eventsOn(dateStr){
 function itemsOn(dateStr){
   const hol = (S.holidays||[]).some(h => dateStr >= h.start && dateStr <= h.end);
   return lessonsOn(dateStr).concat(eventsOn(dateStr))
-    .map(x => { x.hol = hol; return x; })
+    .map(x => { x.hol = hol; x.endMin = itemEndMin(x); return x; })
     .sort((a,b)=> toMin(a.time)-toMin(b.time));
 }
 function isEventItem(key){ const tag=key.split('|')[1]; return tag[0]==='r'||tag[0]==='p'; }
@@ -442,57 +442,70 @@ function renderWeekGrid(){
   const days = weekDates(weekOffset);
   const today = todayStr();
   const all = days.flatMap(d => itemsOn(d).map(l => Object.assign({}, l, {date:d})));
-  if (!all.length) { $('weekGrid').innerHTML = '<div class="thint" style="padding:30px 0">本周暂无课程 🎐</div>'; return; }
+  const gridEl = document.getElementById('weekGrid');
+  if (!all.length) { gridEl.innerHTML = '<div style="padding:30px 0;text-align:center;color:var(--sub)">本周暂无课程 🎐</div>'; return; }
 
-  // 时间轴：最早开始 → 最晚结束
-  let t0Min = 24*60, t1Min = 0;
-  all.forEach(l => {
-    t0Min = Math.min(t0Min, toMin(l.time));
-    t1Min = Math.max(t1Min, itemEndMin(l));
-  });
-  t0Min = Math.floor(t0Min/30)*30;
-  t1Min = Math.ceil(t1Min/30)*30;
-  const totalMin = Math.max(120, t1Min - t0Min);
-  // 自适应一屏：可用高度 / 总分钟，限幅
-  const avail = Math.max(340, window.innerHeight - 250);
-  const PX = Math.min(1.3, Math.max(0.6, avail / totalMin));
-  const gridH = Math.round(totalMin * PX);
-  const yOf = mins => Math.round((mins - t0Min) * PX);
+  // 时间范围（对齐整点）
+  let t0 = 24*60, t1 = 0;
+  all.forEach(l => { t0 = Math.min(t0, toMin(l.time)); t1 = Math.max(t1, itemEndMin(l)); });
+  t0 = Math.max(0, Math.floor(t0/60)*60);
+  t1 = Math.min(1440, Math.ceil(t1/60)*60);
+  const rangeMin = Math.max(120, t1 - t0);
+  const avail = Math.max(300, window.innerHeight - 290);
+  const PXPM = Math.min(1.3, Math.max(0.5, avail / rangeMin));
+  const H = Math.round(rangeMin * PXPM);
 
-  // 头部星期行
-  let html = '<div class="ghead2"><span class="gts"></span>' + days.map(d =>
-    `<span class="gdayh ${d===today?'today':''}"><b>${DOW[dowMon(d)].slice(1)}</b>${+d.slice(5,7)}/${+d.slice(8,10)}</span>`).join('') + '</div>';
+  // 表头（左空 + 七日）
+  let html = '<div class="tthead"><span class="tt-sp"></span>' + days.map(d =>
+    `<span class="tt-dh ${d===today?'today':''}"><b>${DOW[dowMon(d)].slice(1)}</b>${+d.slice(5,7)}/${+d.slice(8,10)}</span>`).join('') + '</div>';
 
-  // 七列（今天高亮），块绝对定位
-  html += '<div class="gwrap" style="height:' + gridH + 'px"><div class="gtl">';
-  for (let m = Math.ceil(t0Min/60)*60; m <= t1Min; m += 60) {
-    html += `<span class="gmark" style="top:${Math.round((m-t0Min)*PX)}px">${pad(Math.floor(m/60))}:${pad(m%60)}</span>`;
+  // 主体：整点刻度 + 七日列
+  html += `<div class="tt-body" style="height:${H}px">`;
+  for (let m = Math.ceil(t0/60)*60; m <= t1; m += 60) {
+    const y = Math.round((m - t0) * PXPM);
+    html += `<span class="tt-hl" style="top:${y}px">${pad(Math.floor(m/60))}:${pad(m%60)}</span><div class="tt-hline" style="top:${y}px"></div>`;
   }
-  html += '</div>';
-  html += days.map((d, di) => {
+  html += '<div class="tt-cols">' + days.map((d, di) => {
     const items = all.filter(l => l.date === d).sort((a,b)=>toMin(a.time)-toMin(b.time));
-    const blocks = items.map(l => {
+    const colEnds = [];
+    const placed = items.map(l => {
+      const s = toMin(l.time), e = itemEndMin(l);
+      let ci = colEnds.findIndex(ce => s >= ce - 0.01);
+      if (ci === -1) { ci = colEnds.length; colEnds.push(e); } else { colEnds[ci] = Math.max(colEnds[ci], e); }
+      return { l, ci };
+    });
+    const nCols = Math.max(1, colEnds.length);
+    const colW = (100 / nCols).toFixed(1);
+    const blocks = placed.map(({l, ci}) => {
       const status = lessonStatus(l);
-      const hol = l.hol && !status;
-      const dim = status==='done' ? 'opacity:.55;text-decoration:line-through;' : (hol ? 'opacity:.45;' : '');
-      const eMin = itemEndMin(l);
-      const h = Math.max(22, Math.round((eMin - toMin(l.time)) * PX) - 2);
-      let inner = '';
+      const done = status==='done';
+      const dim = done ? 'opacity:.55;text-decoration:line-through;' : (status==='leave' ? 'opacity:.5;' : '');
+      const top = Math.round((toMin(l.time) - t0) * PXPM) + 1;
+      const h = Math.max(18, Math.round((itemEndMin(l) - toMin(l.time)) * PXPM) - 2);
+      const left = (ci * 100 / nCols).toFixed(1);
+      const width = (100 / nCols).toFixed(1);
+      let inner = '', bg = '', fg = '#5c3a4a';
       if (l.kind==='reh' || l.kind==='perf'){
-        const p = projectById(l.projectId) || {title:'?'};
-        inner = `<b>${l.kind==='reh'?'🎼':'✨'}${esc(p.title.slice(0,6))}</b><i>${l.time}${l.end?'-'+l.end:''}</i>`;
-        return `<button class="gblk orch ${status==='done'?'done':''}" data-key="${l.key}" style="top:${yOf(toMin(l.time))}px;height:${h}px;${dim}">${inner}</button>`;
+        const p = projectById(l.projectId) || {title:'（已删除）', rfee:0, cfee:0};
+        const fee = l.kind==='reh' ? (+p.rfee||0) : (+p.cfee||0);
+        const emoji = l.kind==='reh' ? '🎼' : '✨';
+        bg = l.kind==='reh' ? '#ece3f8' : '#ffe3c9';
+        fg = l.kind==='reh' ? '#5d4a7d' : '#8a6116';
+        inner = `<b>${emoji}${esc(p.title.slice(0,7))}</b><i>${l.time}${l.end?'-'+l.end:''}${fee?' ¥'+fee:''}</i>`;
+      } else {
+        const st = itemStudent(l.studentId);
+        inner = `<b>${esc(st.name)}</b><i>${st.piece?esc(st.piece).slice(0,8):'小提琴课'}</i>`;
+        bg = studentColor(l.studentId);
       }
-      const st = itemStudent(l.studentId);
-      const pend = l.kind==='extra' && !l.confirmed;
-      inner = `<b>${esc(st.name)}${pend?' ⏳':''}</b><i>${timeRange(l)}${l.loc?' 📍':''}</i>`;
-      return `<button class="gblk ${pend?'pend':''} ${status==='done'?'done':''}" data-key="${l.key}" style="top:${yOf(toMin(l.time))}px;height:${h}px;background:${studentColor(l.studentId)};${dim}">${inner}</button>`;
+      const note = S.log[l.key] && S.log[l.key].note;
+      if (note) inner += `<u class="nt">📝${esc(note).slice(0,6)}</u>`;
+      return `<button class="tte ${done?'done':''}" data-key="${l.key}" style="top:${top}px;height:${h}px;left:${left}%;width:calc(${width}% - 2px);background:${bg};color:${fg};${dim}">${inner}</button>`;
     }).join('');
-    return `<div class="gday ${d===today?'today':''}">${blocks}</div>`;
-  }).join('');
-  html += '</div>';
+    return `<div class="tt-col ${d===today?'today':''}">${blocks}</div>`;
+  }).join('') + '</div></div>';
 
-  $('weekGrid').innerHTML = html;
+  gridEl.innerHTML = html;
+  return all.length;
 }
 
 function renderStudents(){
