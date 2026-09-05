@@ -692,6 +692,8 @@ function isBirthday(dateStr){ return S.meta.birthday && mmdd(dateStr)===S.meta.b
 function showSplash(){
   const t = todayStr();
   const box = $('splash');
+  const sf = $('splashFace');
+  if (sf) sf.src = 'assets/face_' + (MASCOTS[S.meta.theme] ? S.meta.theme : 'melody') + '.jpg';
   if(isBirthday(t)){
     $('splashTitle').textContent = '🎂 生日快乐';
     $('splashText').innerHTML = '愿新的一岁，<br>琴声和日子都甜甜的 ♡<br><span style="font-size:12.5px;opacity:.75">—— 这个小课表，是给你的一份小心意</span>';
