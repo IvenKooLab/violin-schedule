@@ -475,3 +475,4 @@ body.t-kuromi .gcell{background:rgba(255,255,255,.06)}
 .tte i{display:block;font-style:normal;font-size:8.5px;opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tte.done{opacity:.55}
 .tte .nt{display:block;font-style:normal;font-size:8.5px;text-decoration:none;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tte .tt{display:block;font-style:normal;font-size:8.5px;text-decoration:none;opacity:.7;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

@@ -383,7 +383,7 @@ function renderWeekList(days, t){
       }
       const st = studentById(l.studentId)||{name:'?'};
       const done = lessonStatus(l)==='done';
-      return `<button class="wchip" data-key="${l.key}" style="--wc:${studentColor(l.studentId)};${done?'opacity:.55;text-decoration:line-through':''}">${l.time} <b>${esc(st.name)}</b>${lessonStatus(l)==='leave'?' 🏖️':''}</button>`;
+      return `<button class="wchip" data-key="${l.key}" style="--wc:${studentColor(l.studentId)};${done?'opacity:.55;text-decoration:line-through':''}">${l.time} <b>${esc(st.name)}</b> ${st.piece?esc(st.piece).slice(0,6):'小提琴课'}${lessonStatus(l)==='leave'?' 🏖️':''}</button>`;
     }).join('');
     return `<div class="wrow ${isToday?'today':''}">
       <div class="wd"><div class="n">${DOW[dowMon(d)]}</div><div class="d">${+d.slice(5,7)}/${+d.slice(8,10)}${isToday?' · 今天':''}</div></div>
@@ -449,7 +449,7 @@ function renderWeekGrid(){
         inner = `<b>${emoji}${esc(p.title.slice(0,7))}</b><i>${l.time}${l.end?'-'+l.end:''}${fee?' ¥'+fee:''}</i>`;
       } else {
         const st = itemStudent(l.studentId);
-        inner = `<b>${esc(st.name)}</b><i>${st.piece?esc(st.piece).slice(0,8):'小提琴课'}</i>`;
+        inner = `<b>${esc(st.name)}</b><i>${st.piece?esc(st.piece).slice(0,9):'小提琴课'}</i><u class="tt">${l.time}${l.end?'-'+l.end:''}</u>`;
         bg = studentColor(l.studentId);
       }
       const note = S.log[l.key] && S.log[l.key].note;
@@ -533,20 +533,7 @@ function saveSettings(){
 }
 /* 数据自愈去重：重复导入/同步合并产生的冗余副本在这里统一清除 */
 function dedupeData(){
-  const byName = {};
-  const kept = [];
-  (S.students||[]).forEach(s => {
-    if (byName[s.name]) {
-      const k = byName[s.name];
-      ['loc','level','piece','fee','note','phone','bday','avatar'].forEach(f => { if (!k[f] && s[f]) k[f] = s[f]; });
-      if ((s.photos||[]).length > (k.photos||[]).length) k.photos = s.photos;
-      return;
-    }
-    byName[s.name] = s; kept.push(s);
-  });
-  S.students = kept;
-  const ids = new Set(S.students.map(s=>s.id));
-  S.slots = (S.slots||[]).filter(sl => ids.has(sl.studentId));
+  // 学生绝不按名字自动合并（同机构同名的两个真实学生曾被误删）；只做精确键去重
   const seenSlot = new Set();
   S.slots = (S.slots||[]).filter(sl => {
     const k = sl.studentId+'|'+sl.dow+'|'+sl.time;
@@ -1225,6 +1212,8 @@ function mergeData(local, remote){
   const seenEx3 = new Set();
   out.extras = out.extras.filter(ex => { const k = ex.studentId+'|'+ex.date+'|'+ex.time; if (seenEx3.has(k)) return false; seenEx3.add(k); return true; });
     out.meta = Object.assign({}, out.meta, { birthday: (remote.meta && remote.meta.birthday) || out.meta.birthday });
+  // 用户头像/称呼：本机没有时从云端找回（头像曾只存本机，清存储即丢；云端一直有备份）
+  ['userAvatar','userName'].forEach(f => { if (!out.meta[f] && remote.meta && remote.meta[f]) out.meta[f] = remote.meta[f]; });
   return out;
 }
 async function syncPush(silent){
