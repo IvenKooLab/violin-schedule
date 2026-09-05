@@ -41,6 +41,7 @@ const MASCOTS = {
 /* ---------------- 状态 ---------------- */
 let S = null;
 let weekOffset = 0;
+let agendaJump = false; // 进周页/切到日程视图时，滚到今天分区一次
 let editingStudentId = null;
 let editingExtraId = null;
 let currentLessonKey = null;
@@ -364,7 +365,7 @@ function renderWeek(){
   $('weekList').style.display = gridMode ? 'none' : '';
   $('weekGrid').style.display = gridMode ? '' : 'none';
   let total = 0;
-  if(gridMode) total = renderWeekGrid(days, t);
+  if(gridMode) total = renderWeekAgenda(days, t);
   else total = renderWeekList(days, t);
   $('weekSummary').innerHTML = `<span class="pill">🎀 这一周共 ${total} 项（课+乐团）</span>`;
 }
@@ -393,74 +394,28 @@ function renderWeekList(days, t){
   }).join('');
   return total;
 }
-function renderWeekGrid(){
-  const days = weekDates(weekOffset);
-  const today = todayStr();
-  const all = days.flatMap(d => itemsOn(d).map(l => Object.assign({}, l, {date:d})));
-  const gridEl = document.getElementById('weekGrid');
-  if (!all.length) { gridEl.innerHTML = '<div style="padding:30px 0;text-align:center;color:var(--sub)">本周暂无课程 🎐</div>'; return; }
-
-  // 时间范围（对齐整点）
-  let t0 = 24*60, t1 = 0;
-  all.forEach(l => { t0 = Math.min(t0, toMin(l.time)); t1 = Math.max(t1, itemEndMin(l)); });
-  t0 = Math.max(0, Math.floor(t0/60)*60);
-  t1 = Math.min(1440, Math.ceil(t1/60)*60);
-  const rangeMin = Math.max(120, t1 - t0);
-  const avail = Math.max(300, window.innerHeight - 290);
-  const PXPM = Math.min(1.3, Math.max(0.5, avail / rangeMin));
-  const H = Math.round(rangeMin * PXPM);
-
-  // 表头（左空 + 七日）
-  let html = '<div class="tthead"><span class="tt-sp"></span>' + days.map(d =>
-    `<span class="tt-dh ${d===today?'today':''}"><b>${DOW[dowMon(d)].slice(1)}</b>${+d.slice(5,7)}/${+d.slice(8,10)}</span>`).join('') + '</div>';
-
-  // 主体：整点刻度 + 七日列
-  html += `<div class="tt-body" style="height:${H}px">`;
-  for (let m = Math.ceil(t0/60)*60; m <= t1; m += 60) {
-    const y = Math.round((m - t0) * PXPM);
-    html += `<span class="tt-hl" style="top:${y}px">${pad(Math.floor(m/60))}:${pad(m%60)}</span><div class="tt-hline" style="top:${y}px"></div>`;
+function renderWeekAgenda(days, t){
+  let total = 0;
+  $('weekGrid').innerHTML = days.map(d=>{
+    const items = itemsOn(d);
+    const active = items.filter(l=>lessonStatus(l)!=='leave' && !l.hol).length;
+    total += active;
+    const isToday = d===t;
+    const hol = items.length && items[0].hol;
+    const cnt = items.length ? (hol ? `${items.length} 项 · 假期` : `${active} 节`) : '休';
+    const head = `<div class="agHead ${isToday?'today':''}"><b>${DOW[dowMon(d)]}</b><span>${+d.slice(5,7)}/${+d.slice(8,10)}${isToday?' · 今天':''}</span><span class="agn">${cnt}</span><button class="addbtn" data-adddate="${d}">＋</button></div>`;
+    const cards = items.length ? items.map(l=>itemRowHTML(l,0,false)).join('') : '<div class="agEmpty">休息 💤</div>';
+    return `<div class="agDay${isToday?' today':''}"${isToday?' id="agToday"':''}>${head}${cards}</div>`;
+  }).join('');
+  if (agendaJump){
+    agendaJump = false;
+    const el = document.getElementById('agToday');
+    if (el){
+      const y = el.getBoundingClientRect().top + window.scrollY - 8;
+      if (Math.abs(window.scrollY - y) > 40) window.scrollTo(0, y);
+    }
   }
-  html += '<div class="tt-cols">' + days.map((d, di) => {
-    const items = all.filter(l => l.date === d).sort((a,b)=>toMin(a.time)-toMin(b.time));
-    const colEnds = [];
-    const placed = items.map(l => {
-      const s = toMin(l.time), e = itemEndMin(l);
-      let ci = colEnds.findIndex(ce => s >= ce - 0.01);
-      if (ci === -1) { ci = colEnds.length; colEnds.push(e); } else { colEnds[ci] = Math.max(colEnds[ci], e); }
-      return { l, ci };
-    });
-    const nCols = Math.max(1, colEnds.length);
-    const colW = (100 / nCols).toFixed(1);
-    const blocks = placed.map(({l, ci}) => {
-      const status = lessonStatus(l);
-      const done = status==='done';
-      const dim = done ? 'opacity:.55;text-decoration:line-through;' : (status==='leave' ? 'opacity:.5;' : '');
-      const top = Math.round((toMin(l.time) - t0) * PXPM) + 1;
-      const h = Math.max(18, Math.round((itemEndMin(l) - toMin(l.time)) * PXPM) - 2);
-      const left = (ci * 100 / nCols).toFixed(1);
-      const width = (100 / nCols).toFixed(1);
-      let inner = '', bg = '', fg = '#5c3a4a';
-      if (l.kind==='reh' || l.kind==='perf'){
-        const p = projectById(l.projectId) || {title:'（已删除）', rfee:0, cfee:0};
-        const fee = l.kind==='reh' ? (+p.rfee||0) : (+p.cfee||0);
-        const emoji = l.kind==='reh' ? '🎼' : '✨';
-        bg = l.kind==='reh' ? '#ece3f8' : '#ffe3c9';
-        fg = l.kind==='reh' ? '#5d4a7d' : '#8a6116';
-        inner = `<b>${emoji}${esc(p.title.slice(0,7))}</b><i>${l.time}${l.end?'-'+l.end:''}${fee?' ¥'+fee:''}</i>`;
-      } else {
-        const st = itemStudent(l.studentId);
-        inner = `<b>${esc(st.name)}</b><i>${st.piece?esc(st.piece).slice(0,9):'小提琴课'}</i><u class="tt">${l.time}${l.end?'-'+l.end:''}</u>`;
-        bg = studentColor(l.studentId);
-      }
-      const note = S.log[l.key] && S.log[l.key].note;
-      if (note) inner += `<u class="nt">📝${esc(note).slice(0,6)}</u>`;
-      return `<button class="tte ${done?'done':''}" data-key="${l.key}" style="top:${top}px;height:${h}px;left:${left}%;width:calc(${width}% - 2px);background:${bg};color:${fg};${dim}">${inner}</button>`;
-    }).join('');
-    return `<div class="tt-col ${d===today?'today':''}">${blocks}</div>`;
-  }).join('') + '</div></div>';
-
-  gridEl.innerHTML = html;
-  return all.length;
+  return total;
 }
 
 function renderStudents(){
@@ -1565,6 +1520,7 @@ function switchPage(name){
   $('page-'+name).classList.add('on');
   document.querySelectorAll('#tabbar .tab').forEach(t=>t.classList.toggle('on', t.dataset.page===name));
   window.scrollTo(0,0);
+  if (name==='week' && S.meta.weekView==='grid'){ agendaJump = true; renderWeek(); }
 }
 
 /* ---------------- 事件绑定 ---------------- */
@@ -1587,9 +1543,10 @@ function bind(){
   $('wkPrev').addEventListener('click',()=>{ weekOffset--; renderWeek(); });
   $('wkNext').addEventListener('click',()=>{ weekOffset++; renderWeek(); });
   $('vList').addEventListener('click',()=>{ S.meta.weekView='list'; save(); renderWeek(); });
-  $('vGrid').addEventListener('click',()=>{ S.meta.weekView='grid'; save(); renderWeek(); });
+  $('vGrid').addEventListener('click',()=>{ S.meta.weekView='grid'; agendaJump = true; save(); renderWeek(); });
   $('weekGrid').addEventListener('click',e=>{
-    const blk = e.target.closest('.gblk'); if(blk) openItemSheet(blk.dataset.key);
+    const row = e.target.closest('.lrow'); if(row){ openItemSheet(row.dataset.key); return; }
+    const add = e.target.closest('.addbtn'); if(add) openExtra(add.dataset.adddate);
   });
 
   // 学生页
