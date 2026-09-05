@@ -32,55 +32,10 @@ const FONTS = [
 const STUDENT_COLORS = { melody:'#ffe3ec', kitty:'#ffe3ec', kuromi:'#4a4258', cinnamo:'#d3e8fa' };
 
 const MASCOTS = {
-  melody:`<svg width="46" height="46" viewBox="0 0 120 120">
-    <ellipse cx="32" cy="12" rx="11" ry="20" fill="#fff" stroke="#f3a7c3" stroke-width="3" transform="rotate(-20 32 12)"/>
-    <ellipse cx="88" cy="12" rx="11" ry="20" fill="#fff" stroke="#f3a7c3" stroke-width="3" transform="rotate(20 88 12)"/>
-    <circle cx="60" cy="62" r="44" fill="#ffb9d4"/>
-    <ellipse cx="60" cy="76" rx="33" ry="25" fill="#fff"/>
-    <circle cx="46" cy="73" r="4.5" fill="#5b4037"/><circle cx="74" cy="73" r="4.5" fill="#5b4037"/>
-    <ellipse cx="60" cy="84" rx="6" ry="4.5" fill="#ffd44d"/>
-    <g stroke="#e8938f" stroke-width="2.5" stroke-linecap="round">
-      <line x1="20" y1="76" x2="31" y2="74"/><line x1="20" y1="84" x2="31" y2="83"/>
-      <line x1="100" y1="76" x2="89" y2="74"/><line x1="100" y1="84" x2="89" y2="83"/>
-    </g>
-    <ellipse cx="35" cy="84" rx="6" ry="3.5" fill="#ffc9d8"/><ellipse cx="85" cy="84" rx="6" ry="3.5" fill="#ffc9d8"/>
-    <g transform="translate(60 20)"><path d="M0 0 L-15 -9 L-15 9 Z" fill="#ff7fae"/><path d="M0 0 L15 -9 L15 9 Z" fill="#ff7fae"/><circle r="5" fill="#ff5c96"/></g>
-  </svg>`,
-  kitty:`<svg width="48" height="48" viewBox="0 0 120 120">
-    <path d="M28 36 L20 6 L50 24 Z" fill="#fff" stroke="#f0c8d0" stroke-width="3" stroke-linejoin="round"/>
-    <path d="M92 36 L100 6 L70 24 Z" fill="#fff" stroke="#f0c8d0" stroke-width="3" stroke-linejoin="round"/>
-    <ellipse cx="60" cy="68" rx="47" ry="39" fill="#fff" stroke="#f0c8d0" stroke-width="3"/>
-    <ellipse cx="42" cy="63" rx="4.5" ry="6" fill="#2b2b2b"/><ellipse cx="78" cy="63" rx="4.5" ry="6" fill="#2b2b2b"/>
-    <ellipse cx="60" cy="77" rx="7" ry="5" fill="#ffcf3e"/>
-    <g stroke="#e8a0ae" stroke-width="2.5" stroke-linecap="round">
-      <line x1="6" y1="60" x2="25" y2="64"/><line x1="6" y1="72" x2="25" y2="72"/><line x1="6" y1="84" x2="25" y2="80"/>
-      <line x1="114" y1="60" x2="95" y2="64"/><line x1="114" y1="72" x2="95" y2="72"/><line x1="114" y1="84" x2="95" y2="80"/>
-    </g>
-    <g transform="translate(26 30) rotate(-14)"><path d="M0 0 L-16 -10 L-16 10 Z" fill="#ff4d6d"/><path d="M0 0 L16 -10 L16 10 Z" fill="#ff4d6d"/><circle r="5.5" fill="#e63b58"/></g>
-  </svg>`,
-  kuromi:`<svg width="48" height="48" viewBox="0 0 120 120">
-    <path d="M20 28 Q4 12 14 4 Q28 10 34 22 Z" fill="#241f2e"/>
-    <path d="M100 28 Q116 12 106 4 Q92 10 86 22 Z" fill="#241f2e"/>
-    <circle cx="12" cy="8" r="5" fill="#ffb3d9"/><circle cx="108" cy="8" r="5" fill="#ffb3d9"/>
-    <circle cx="60" cy="64" r="44" fill="#332c3f"/>
-    <ellipse cx="60" cy="78" rx="30" ry="21" fill="#fff"/>
-    <ellipse cx="47" cy="74" rx="4.5" ry="6" fill="#241f2e" transform="rotate(14 47 74)"/>
-    <ellipse cx="73" cy="74" rx="4.5" ry="6" fill="#241f2e" transform="rotate(-14 73 74)"/>
-    <path d="M55 88 Q60 92 65 88" stroke="#241f2e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-    <circle cx="60" cy="38" r="9" fill="#fff"/>
-    <circle cx="57" cy="37" r="1.8" fill="#241f2e"/><circle cx="63" cy="37" r="1.8" fill="#241f2e"/>
-    <ellipse cx="60" cy="42" rx="2.2" ry="1.6" fill="#241f2e"/>
-    <ellipse cx="40" cy="84" rx="5.5" ry="3" fill="#f5c0d8"/><ellipse cx="80" cy="84" rx="5.5" ry="3" fill="#f5c0d8"/>
-  </svg>`,
-  cinnamo:`<svg width="48" height="48" viewBox="0 0 120 120">
-    <ellipse cx="16" cy="34" rx="12" ry="30" fill="#fff" stroke="#dfe9f4" stroke-width="3" transform="rotate(-34 16 34)"/>
-    <ellipse cx="104" cy="34" rx="12" ry="30" fill="#fff" stroke="#dfe9f4" stroke-width="3" transform="rotate(34 104 34)"/>
-    <circle cx="60" cy="66" r="40" fill="#fff" stroke="#dfe9f4" stroke-width="3"/>
-    <circle cx="47" cy="60" r="4" fill="#6b5b4d"/><circle cx="73" cy="60" r="4" fill="#6b5b4d"/>
-    <ellipse cx="60" cy="71" rx="5.5" ry="4" fill="#f0b04a"/>
-    <ellipse cx="36" cy="72" rx="6" ry="3.5" fill="#ffd3dc"/><ellipse cx="84" cy="72" rx="6" ry="3.5" fill="#ffd3dc"/>
-    <path d="M52 82 Q60 88 68 82" stroke="#d9a0a8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-  </svg>`,
+  melody:`<img class="avimg" src="assets/face_melody.jpg" alt="美乐蒂">`,
+  kitty:`<img class="avimg" src="assets/face_kitty.jpg" alt="凯蒂猫">`,
+  kuromi:`<img class="avimg" src="assets/face_kuromi.jpg" alt="库洛米">`,
+  cinnamo:`<img class="avimg" src="assets/face_cinnamo.jpg" alt="玉桂狗">`,
 };
 
 /* ---------------- 状态 ---------------- */
@@ -271,11 +226,11 @@ function applyTheme(){
   const t = S.meta.theme;
   document.body.className = 't-'+t+' f-'+(S.meta.font||'kuaile');
   document.querySelector('meta[name=theme-color]').setAttribute('content', THEME_COLOR[t]||'#ffe6ef');
-  const svg = MASCOTS[t] || MASCOTS.melody;
+  const mascot = MASCOTS[t] || MASCOTS.melody;
   ['mascotSlot','mascotSlot2','mascotSlot3','mascotSlot4'].forEach((id,idx)=>{
     const el=$(id); if(!el) return;
     el.innerHTML = (idx===0 && S.meta.userAvatar)
-      ? `<img class="avimg" src="${S.meta.userAvatar}">` : svg;
+      ? `<img class="avimg" src="${S.meta.userAvatar}">` : mascot;
   });
 }
 function applyWall(){
