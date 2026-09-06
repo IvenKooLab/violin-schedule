@@ -1626,33 +1626,6 @@ function bind(){
   $('btnCancelStatus').addEventListener('click',clearStatus);
   $('btnDelExtra').addEventListener('click',delExtra);
   $('btnEditEvent').addEventListener('click',editEventFromSheet);
-  $('btnResched').addEventListener('click',()=>{
-    const key = $('btnResched').dataset.key; if(!key) return;
-    const [d0, tag] = key.split('|');
-    let time = '16:00', sid = null, kind = null;
-    if(tag[0]==='s'){ const sl = S.slots.find(x=>'s'+x.id===tag); if(sl){ sid = sl.studentId; time = sl.time; } }
-    if(tag[0]==='e'){ const ex = S.extras.find(x=>'e'+x.id===tag); if(ex){ sid = ex.studentId; time = ex.time; } }
-    if(tag[0]==='r'||tag[0]==='p'){ const ev = S.events.find(x=>(x.kind==='reh'?'r':'p')+x.id===tag); if(ev) time = ev.time; }
-    openTimePicker({mode:'datetime', title:'改期：选新日期与时间', time,
-      onOk:(nd,nt)=>{
-        if(tag[0]==='s' && sid){
-          S.extras.push({ id:uid(), studentId:sid, date:nd, time:nt, end:'', note:'调课（原 '+d0+' '+time+'）', ts:Date.now() });
-          S.log[key] = Object.assign({}, S.log[key], { status:'leave', note:'已改期至 '+nd, ts:Date.now() });
-          save(); closeMask('maskLesson'); renderAll(); toast('改好啦，新时间见 ♪');
-        } else {
-          // 乐团日程原位改期
-          const ev = S.events.find(x=>(x.kind==='reh'?'r':'p')+x.id===tag);
-          if(ev){ ev.date = nd; ev.time = nt; ev.ts = Date.now(); }
-          save(); closeMask('maskLesson'); renderAll(); toast('改好啦 ♪');
-        }
-      }});
-  });
-  $('btnConfirm').addEventListener('click',e=>{
-    const key = e.currentTarget.dataset.key; if(!key) return;
-    const tag = key.split('|')[1];
-    if(tag[0]==='e'){ const ex = S.extras.find(x=>'e'+x.id===tag); if(ex) ex.confirmed = true; }
-    save(); closeMask('maskLesson'); renderAll(); toast('已确认，稳了 ♡');
-  });
   $('btnConfirm').addEventListener('click',e=>{
     const key = e.currentTarget.dataset.key; if(!key) return;
     const tag = key.split('|')[1];
@@ -1791,7 +1764,6 @@ function bind(){
     btnBusy(e.target, true);
     try{
       const dataUrl = await new Promise((res,rej)=>{ const fr = new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(f); });
-      S.meta.customWall = await compressSquare(dataUrl, 240); // 占位：马上替换为宽版压缩
       S.meta.customWall = await compressWide(dataUrl);
       S.meta.wall = 'custom'; save(); applyWall(); renderThemes();
       toast('自定义壁纸设置好啦 ♡');
@@ -1862,18 +1834,6 @@ function init(){
   setTimeout(checkSplash, 600);
 
   probeWalls();
-  $('vHol').addEventListener('click', openHolidays);
-  $('holStart').addEventListener('click', () => openTimePicker({mode:'date', title:'假期开始日期', date:holPick.start, onOk:d=>{ holPick.start=d; renderHolidays(); }}));
-  $('holEnd').addEventListener('click', () => openTimePicker({mode:'date', title:'假期结束日期', date:holPick.end, onOk:d=>{ holPick.end=d; renderHolidays(); }}));
-  $('btnAddHol').addEventListener('click', () => {
-    if (!holPick.start || !holPick.end || holPick.end < holPick.start) { toast('先选好开始和结束日期'); return; }
-    (S.holidays = S.holidays||[]).push({ start:holPick.start, end:holPick.end });
-    save(); renderHolidays(); renderAll(); toast('假期安排好啦');
-  });
-  $('holList').addEventListener('click', e => {
-    const rm = e.target.closest('.holrm'); if (!rm) return;
-    S.holidays.splice(+rm.dataset.i, 1); save(); renderHolidays(); renderAll();
-  });
   $('vHol').addEventListener('click',openHolidays);
   $('holStart').addEventListener('click',()=>openTimePicker({mode:'date', title:'假期开始日期', date:holPick.start, onOk:d=>{ holPick.start=d; renderHolidays(); }}));
   $('holEnd').addEventListener('click',()=>openTimePicker({mode:'date', title:'假期结束日期', date:holPick.end, onOk:d=>{ holPick.end=d; renderHolidays(); }}));
