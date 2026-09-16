@@ -4,7 +4,7 @@
 
 > 起源：作者送给妻子（小提琴老师）的生日礼物，做给她自己日常用，顺手开源。
 
-![技术栈](https://img.shields.io/badge/%E6%8A%80%E6%9C%AF%E6%A0%88-%E7%BA%AF%E5%8E%9F%E7%94%9FHTML%2FCSS%2FJS-pink) ![后端](https://img.shields.io/badge/%E5%90%8E%E7%AB%AF-Python%E6%A0%87%E5%87%86%E5%BA%93-blue) ![协议](https://img.shields.io/badge/%E5%8D%8F%E8%AE%AE-MIT-green)
+![技术栈](https://img.shields.io/badge/%E6%8A%80%E6%9C%AF%E6%A0%88-%E7%BA%AF%E5%8E%9F%E7%94%9FHTML%2FCSS%2FJS-pink) ![后端](https://img.shields.io/badge/%E5%90%8E%E7%AB%AF-Python%E6%A0%87%E5%87%86%E5%BA%93-blue) ![协议](https://img.shields.io/badge/%E5%8D%8F%E8%AE%AE-MIT-green) [![Gitee Stars](https://gitee.com/IvenKooLab/violin-schedule/badge/star.svg?theme=dark)](https://gitee.com/IvenKooLab/violin-schedule)
 
 ## 功能 ✨
 
