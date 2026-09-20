@@ -166,6 +166,9 @@
           <button class="btn ghost" id="btnSyncUp">⬆️ 上传</button>
           <button class="btn ghost" id="btnSyncDown">⬇️ 下载合并</button>
         </div>
+        <div class="datarow">
+          <button class="btn ghost" id="btnSyncHist">🕘 云端历史（最近 20 版）</button>
+        </div>
         <div class="thint" id="syncHint">数据存在本机；配好云同步后，改任何内容都会自动同步到另一台手机 ♡</div>
       </div>
       <div class="thint" id="aboutLine">秋秋课表 · 一个装着爱的小课表 ♡</div>
@@ -239,6 +242,7 @@
       <button class="btn ghost" id="btnLeave">🏖️ 今天请假</button>
       <button class="btn ghost" id="btnCancelStatus">↩️ 撤销打卡状态</button>
       <button class="btn ghost" id="btnResched" style="display:none">📅 改期（选新日期时间）</button>
+      <button class="btn ghost" id="btnMakeup" style="display:none">🔍 找空档补课</button>
       <button class="btn ghost" id="btnConfirm" style="display:none">✅ 确认已约（家长已确认）</button>
       <button class="btn ghost" id="btnEditEvent" style="display:none">✏️ 改期 / 编辑</button>
       <button class="btn ghost" id="btnDelExtra" style="color:#e05c7e;display:none">🗑️ 删除这节加课</button>
@@ -421,6 +425,29 @@
         <h3 id="billTitle">📊 本月账单</h3>
         <div id="billBody"></div>
         <button class="btn big" id="btnBillCopy" style="margin-top:12px">📋 复制账单文本</button>
+        <button class="btn ghost" id="btnBillImg" style="margin-top:8px">🖼️ 生成图片（长按可保存发家长）</button>
+        <div id="billImgWrap" style="margin-top:8px"></div>
+      </div>
+    </div>
+
+<!-- ===== 弹层：云端历史 ===== -->
+    <div class="mask" id="maskHist">
+      <div class="sheet" style="position:relative">
+        <button class="close" data-close="maskHist">✕</button>
+        <h3>🕘 云端历史（最近 20 版）</h3>
+        <div class="thint">每一点改动都会留档。误删/误同步了？选一版看看，能找回 ♡</div>
+        <div id="histList" style="max-height:46vh;overflow:auto;margin-top:8px"></div>
+        <div id="histPreview" style="display:none;margin-top:10px"></div>
+      </div>
+    </div>
+
+<!-- ===== 弹层：找空档补课 ===== -->
+    <div class="mask" id="maskMakeup">
+      <div class="sheet" style="position:relative">
+        <button class="close" data-close="maskMakeup">✕</button>
+        <h3 id="makeupTitle">🔍 空档 suggestions</h3>
+        <div class="thint" id="makeupSub"></div>
+        <div id="makeupList" style="max-height:52vh;overflow:auto;margin-top:8px"></div>
       </div>
     </div>
 

@@ -303,6 +303,13 @@ function renderToday(){
   let banners = isBirthday(t)
     ? `<div class="birthday" onclick="showSplash()">🎂 生日快乐呀 · 今天也要开心一整天 ♡<span class="bd-hint">戳我 🎁</span></div>` : '';
   S.students.forEach(s => { if (s.bday && mmdd(t) === s.bday) banners += `<div class="birthday" style="background:linear-gradient(90deg,#ffb14d,#ff8f6d)">🎂 今天是 ${esc(s.name)} 的生日 · 记得送上祝福 ♡</div>`; });
+  // 课时包余额提醒：剩余 ≤3 节的横幅
+  S.students.forEach(s => {
+    if (!(s.pass && +s.pass.total > 0)) return;
+    const left = +s.pass.total - (+s.pass.used || 0);
+    if (left > 3) return;
+    banners += `<div class="birthday" style="background:linear-gradient(90deg,${left<=0?'#ff7d9c,#ff5c7e':'#ffb14d,#ff9a6d'})">🎀 ${esc(s.name)} 的课时包${left<=0?'已经用完啦，记得续哦':'只剩 '+left+' 节啦'} ♡</div>`;
+  });
   $('birthdayWrap').innerHTML = banners;
 
   const items = itemsOn(t);
@@ -834,6 +841,7 @@ function openItemSheet(key){
   $('btnDelExtra').textContent = '🗑️ 删除这节加课';
   $('btnResched').style.display = 'block';
   $('btnResched').dataset.key = key;
+  $('btnMakeup').style.display = 'block';
   openMask('maskLesson');
 }
 function openEventSheet(key){
@@ -861,6 +869,7 @@ function openEventSheet(key){
   $('btnConfirm').style.display = 'none';
   $('btnResched').style.display = 'block';
   $('btnResched').dataset.key = key;
+  $('btnMakeup').style.display = 'none';
   $('btnDelExtra').style.display = 'block';
   $('btnDelExtra').textContent = '🗑️ 删除这条日程';
   openMask('maskLesson');
@@ -1793,6 +1802,14 @@ function bind(){
   });
   $('btnSyncUp').addEventListener('click',()=>syncPush(false).catch(e=>toast('上传失败：'+e.message)));
   $('btnSyncDown').addEventListener('click',()=>syncPull().then(m=>toast(m)).catch(e=>toast('下载失败：'+e.message)));
+  $('btnSyncHist').addEventListener('click', openHist);
+  $('histList').addEventListener('click', e => { const r = e.target.closest('.histrow'); if (r) previewHist(+r.dataset.rev); });
+  $('btnMakeup').addEventListener('click', openMakeup);
+  $('btnBillImg').addEventListener('click', () => {
+    try {
+      $('billImgWrap').innerHTML = '<img src="' + billImageDataUrl() + '" style="width:100%;border-radius:14px;box-shadow:0 4px 14px rgba(150,100,125,.2)"><div class="thint" style="margin-top:6px">长按上面的图片 → 存到相册 / 发给家长 ♡</div>';
+    } catch(e){ toast('生成失败：' + e.message); }
+  });
 
   // 生日彩蛋
   $('userAvFile').addEventListener('change', async e=>{
@@ -1816,6 +1833,146 @@ function bind(){
 
   // 每 30 秒刷新今日倒计时
   setInterval(()=>{ if($('page-today').classList.contains('on')) renderToday(); }, 30000);
+}
+
+/* ---------------- 找空档补课 ---------------- */
+let makeupCtx = null;
+function addDaysStr(d, n){ const dt = parseYmd(d); dt.setDate(dt.getDate()+n); return ymd(dt); }
+function makeupSuggestions(ctx){
+  const out = [];
+  const dayStart = 9*60, dayEnd = 21*60;
+  for (let i=1; i<=8 && out.length<6; i++){
+    const d = addDaysStr(todayStr(), i);
+    if ((S.holidays||[]).some(h => d >= h.start && d <= h.end)) continue;
+    const busy = itemsOn(d).filter(x => x.key !== ctx.key)
+      .map(x => [toMin(x.time), itemEndMin(x)]).sort((a,b)=>a[0]-b[0]);
+    const merged = [];
+    busy.forEach(b => { const last = merged[merged.length-1]; if(last && b[0] <= last[1]) last[1] = Math.max(last[1], b[1]); else merged.push(b); });
+    const t = m => pad(Math.floor(m/60)) + ':' + pad(m%60);
+    let cur = dayStart, slot = null;
+    for (const [bs, be] of merged){
+      if (bs - cur >= ctx.durMin){ slot = { date:d, time:t(cur), end:t(cur+ctx.durMin) }; break; }
+      cur = Math.max(cur, be);
+    }
+    if (!slot && dayEnd - cur >= ctx.durMin) slot = { date:d, time:t(cur), end:t(cur+ctx.durMin) };
+    if (slot) out.push(slot);
+  }
+  return out;
+}
+function openMakeup(){
+  const key = currentLessonKey; if(!key) return;
+  const tag = key.split('|')[1];
+  let sid = null, durMin = S.meta.lessonDur || 45;
+  if (tag[0]==='s'){ const sl = S.slots.find(x=>'s'+x.id===tag); if(sl){ sid=sl.studentId; if(sl.end) durMin = toMin(sl.end)-toMin(sl.time); } }
+  else if (tag[0]==='e'){ const ex = S.extras.find(x=>'e'+x.id===tag); if(ex){ sid=ex.studentId; if(ex.end) durMin = toMin(ex.end)-toMin(ex.time); } }
+  if (!sid){ toast('先选一节课再找空档哦'); return; }
+  makeupCtx = { key, sid, durMin: Math.max(30, durMin) };
+  $('makeupTitle').textContent = '🔍 给 ' + itemStudent(sid).name + ' 找空档';
+  $('makeupSub').textContent = '接下来 8 天、每天 9:00-21:00 里的 ' + makeupCtx.durMin + ' 分钟空档（自动避开假期）';
+  closeMask('maskLesson');
+  openMask('maskMakeup');
+  const sug = makeupSuggestions(makeupCtx);
+  $('makeupList').innerHTML = sug.length ? sug.map((s,i) =>
+    `<button class="histrow" data-mk="${i}"><b>${fmtCnDate(s.date,false)}</b><span>${DOW[dowMon(s.date)]}</span><span class="hsize">${s.time}-${s.end}</span><span class="hbtn">补这档</span></button>`
+  ).join('') : '<div class="thint">这 8 天都排满了…可以先给别的课请假腾出空档，或用「改期」自己挑日子</div>';
+  document.querySelectorAll('#makeupList .histrow').forEach(b =>
+    b.addEventListener('click', () => doMakeup(sug[+b.dataset.mk])));
+}
+function doMakeup(s){
+  if (!makeupCtx) return;
+  S.extras.push({ id:uid(), studentId:makeupCtx.sid, date:s.date, time:s.time, end:s.end, note:'补课', ts:Date.now() });
+  S.log[makeupCtx.key] = Object.assign({}, S.log[makeupCtx.key], { status:'leave', note:'已补至 '+s.date+' '+s.time, ts:Date.now() });
+  makeupCtx = null;
+  save(); closeMask('maskMakeup'); renderAll();
+  toast('排好啦：' + fmtCnDate(s.date,false) + ' ' + s.time + ' 见 ♪');
+}
+
+/* ---------------- 云端历史快照 ---------------- */
+let histSnap = null;
+function openHist(){
+  const base = syncApiBase(), c = syncCfg();
+  if (!base || !c.token){ toast('先填好服务器地址和同步码'); return; }
+  openMask('maskHist');
+  $('histPreview').style.display = 'none';
+  $('histList').innerHTML = '<div class="thint">读取中…</div>';
+  syncApi(base, c.token, '/api/history').then(j => {
+    const items = j.items || [];
+    $('histList').innerHTML = items.length ? items.map(h => {
+      let tstr = '';
+      if (h.ts){ const d = new Date(h.ts*1000); tstr = (d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes()); }
+      return `<button class="histrow" data-rev="${h.rev}"><b>rev ${h.rev}</b><span>${tstr}</span><span class="hsize">${Math.max(1,Math.round(h.size/1024))} KB</span><span class="hbtn">查看</span></button>`;
+    }).join('') : '<div class="thint">还没有历史。从这个版本开始，每次上传都会自动留档 ♡</div>';
+  }).catch(e => { $('histList').innerHTML = '<div class="thint">读取失败：'+esc(e.message)+'</div>'; });
+}
+function previewHist(rev){
+  const pv = $('histPreview');
+  pv.style.display = '';
+  pv.innerHTML = '<div class="thint">读取 rev '+rev+' …</div>';
+  syncApi(syncApiBase(), syncCfg().token, '/api/history?rev='+rev).then(j => {
+    histSnap = j;
+    const d = j.data || {};
+    const names = (d.students||[]).map(s=>s.name);
+    pv.innerHTML = `<div class="slotcard"><b>rev ${rev}</b> · ${names.length} 名学生 · ${Object.keys(d.log||{}).length} 次打卡 · ${(d.slots||[]).length} 节固定课
+      <div class="thint" style="margin-top:4px">${esc(names.slice(0,10).join('、'))}${names.length>10?' 等':''}</div>
+      <div class="datarow" style="margin-top:8px"><button class="btn" id="btnHistRestore">♻️ 把这版内容合并回来</button></div></div>`;
+    $('btnHistRestore').addEventListener('click', () => restoreHist(rev));
+  }).catch(e => { pv.innerHTML = '<div class="thint">读取失败：'+esc(e.message)+'</div>'; });
+}
+async function restoreHist(rev){
+  if (!histSnap || histSnap.rev !== rev){ toast('先「查看」这一版'); return; }
+  S = mergeData(S, histSnap.data);
+  persist(); applyTheme(); applyWall(); renderAll();
+  closeMask('maskHist');
+  toast('已合并 rev ' + rev + ' 的内容 ♡ 正在上传新版本…');
+  try { await syncPush(true); toast('☁️ 恢复完成，云端已是新版本'); }
+  catch(e){ toast('本地已恢复；上传失败：' + e.message); }
+}
+
+/* ---------------- 账单长图 ---------------- */
+function rrPath(x, a, b, w, h, r){
+  x.beginPath();
+  x.moveTo(a+r, b); x.lineTo(a+w-r, b); x.arcTo(a+w, b, a+w, b+r, r);
+  x.lineTo(a+w, b+h-r); x.arcTo(a+w, b+h, a+w-r, b+h, r);
+  x.lineTo(a+r, b+h); x.arcTo(a, b+h, a, b+h-r, r);
+  x.lineTo(a, b+r); x.arcTo(a, b, a+r, b, r); x.closePath();
+}
+function billImageDataUrl(){
+  const rows = billData();
+  const W = 750, PD = 40, RH = 74;
+  const H = 320 + rows.length*RH + 150;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const x = cv.getContext('2d');
+  const g = x.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#ffe6ef'); g.addColorStop(1,'#fff9fb');
+  x.fillStyle = g; x.fillRect(0,0,W,H);
+  for (let i=0;i<3;i++){ x.globalAlpha=.18; x.fillStyle='#ff9ec4';
+    x.beginPath(); x.arc(W-70-i*54, 60+((i%2)*36), 26, 0, 7); x.fill(); }
+  x.globalAlpha = 1;
+  x.fillStyle = '#a03058'; x.textBaseline = 'top';
+  x.font = '700 46px "ZCOOL KuaiLe","Microsoft YaHei",sans-serif';
+  x.fillText('秋秋课表 · 账单', PD, 44);
+  x.fillStyle = '#8c4a68'; x.font = '30px "Microsoft YaHei",sans-serif';
+  x.fillText(todayStr().slice(0,7).replace('-',' 年 ') + ' 月', PD, 106);
+  let y = 176, nSum = 0, fSum = 0;
+  rows.forEach(r => {
+    nSum += r.n; fSum += r.fee;
+    x.fillStyle = '#ffffff'; rrPath(x, PD, y, W-2*PD, RH-16, 18); x.fill();
+    x.fillStyle = '#7c4258'; x.font = '700 30px "Microsoft YaHei",sans-serif';
+    x.fillText(r.name, PD+26, y+16);
+    x.font = '28px "Microsoft YaHei",sans-serif';
+    x.fillStyle = '#b9879b'; x.textAlign = 'right';
+    x.fillText(r.n + ' 节', W-PD-(r.fee?140:26), y+18);
+    if (r.fee){ x.fillStyle = '#d64580'; x.fillText('¥'+r.fee, W-PD-26, y+18); }
+    x.textAlign = 'left';
+    y += RH;
+  });
+  y += 10;
+  x.fillStyle = '#d64580'; x.font = '700 34px "Microsoft YaHei",sans-serif';
+  x.fillText('合计 ' + nSum + ' 节' + (fSum? ' · ¥'+fSum : ''), PD, y);
+  x.fillStyle = '#b9879b'; x.font = '24px "Microsoft YaHei",sans-serif';
+  x.fillText('—— 来自秋秋课表 ♡', PD, H-58);
+  return cv.toDataURL('image/jpeg', 0.9);
 }
 
 /* ---------------- 启动 ---------------- */
