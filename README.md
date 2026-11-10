@@ -4,12 +4,12 @@
 
 > 起源：作者送给妻子（小提琴老师）的生日礼物，做给她自己日常用，顺手开源。
 
-![技术栈](https://img.shields.io/badge/%E6%8A%80%E6%9C%AF%E6%A0%88-%E7%BA%AF%E5%8E%9F%E7%94%9FHTML%2FCSS%2FJS-pink) ![后端](https://img.shields.io/badge/%E5%90%8E%E7%AB%AF-Python%E6%A0%87%E5%87%86%E5%BA%93-blue) ![协议](https://img.shields.io/badge/%E5%8D%8F%E8%AE%AE-MIT-green) [![Gitee Stars](https://gitee.com/IvenKooLab/violin-schedule/badge/star.svg?theme=dark)](https://gitee.com/IvenKooLab/violin-schedule)
+![技术栈](https://img.shields.io/badge/%E6%8A%80%E6%9C%AF%E6%A0%88-%E7%BA%AF%E5%8E%9F%E7%94%9FHTML%2FCSS%2FJS-pink) ![后端](https://img.shields.io/badge/%E5%90%8E%E7%AB%AF-Python%E6%A0%87%E5%87%86%E5%BA%93-blue) ![协议](https://img.shields.io/badge/%E5%8D%8F%E8%AE%AE-MIT-green)
 
 ## 功能 ✨
 
 - **今日课程**：下一节倒计时、地点标注、上完打卡写小记录
-- **周课表 · 网格**：WakeUp 式彩色格子，学生的颜色就是格子的颜色；列表/网格双模式
+- **周课表 · 日程**：按天分组的日程卡片（彩色左边条，时间/曲目/地点一眼全见），今天自动置顶；另有紧凑列表模式
 - **学生档案**：程度、固定时间、地点、正在练的曲子、练习进度心
 - **乐团 · 演出**：演出项目 → N 次排练 + M 场演出；排练费按次、演出费按场，出勤自动算进月账本
 - **主题换装**：四套配色主题（原创贴纸）+ 壁纸 + 四款可爱字体
@@ -47,7 +47,7 @@ python3 server/sync_server.py 0.0.0.0 8780
 ## 二次开发 🛠️
 
 - 纯原生 HTML/CSS/JS，无构建链，改完刷新即生效
-- 主题贴纸为原创 SVG 手绘；内附的三丽鸥主题壁纸为同人素材，**仅限个人使用，请勿商用**；
+- 内附的三丽鸥角色形象与壁纸为官方素材，**仅限个人使用，请勿商用**；
   也支持在 App 内上传自己的图片做壁纸
 - 欢迎提 Issue / PR
 
