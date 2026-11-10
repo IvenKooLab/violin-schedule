@@ -1,5 +1,5 @@
 /* 秋秋课表 Service Worker：缓存应用外壳，离线也能开 */
-const CACHE = 'qinqin-v23';
+const CACHE = 'qinqin-v24';
 const ASSETS = [
   './',
   './index.html',
@@ -19,6 +19,13 @@ const ASSETS = [
   './assets/face_kitty.jpg',
   './assets/face_kuromi.jpg',
   './assets/face_cinnamo.jpg',
+  './assets/splash-750x1334.jpg',
+  './assets/splash-1170x2532.jpg',
+  './assets/splash-1179x2556.jpg',
+  './assets/splash-1290x2796.jpg',
+  './assets/splash-1206x2622.jpg',
+  './assets/splash-1320x2868.jpg',
+  './assets/splash-1640x2360.jpg',
   './assets/font-huangyou.woff2',
   './assets/font-kai.woff2',
   './assets/icon-180.png',

@@ -1386,8 +1386,10 @@ const AI_PROMPT = [
 async function aiRecognizeDataUrl(dataUrl){
   const key = (document.getElementById('aiKey').value.trim()) || (S.meta.ai && S.meta.ai.key) || '';
   if(!key) throw new Error('先填智谱 API Key（图片识别要用）');
-  S.meta.ai = Object.assign({}, S.meta.ai||{}, {key}); persist();
-  const body = { model:'glm-4v-flash', temperature:0.1, messages:[{ role:'user', content:[
+  const model = (document.getElementById('aiModel') && document.getElementById('aiModel').value.trim())
+    || (S.meta.ai && S.meta.ai.model) || 'glm-4v-flash';
+  S.meta.ai = Object.assign({}, S.meta.ai||{}, {key, model}); persist();
+  const body = { model, temperature:0.1, messages:[{ role:'user', content:[
     { type:'image_url', image_url:{ url:dataUrl } },
     { type:'text', text: AI_PROMPT }
   ]}]};
@@ -1453,6 +1455,7 @@ function openOneImport(){
   $('impText').value='';
   document.querySelectorAll('.itab').forEach(t=>t.classList.toggle('on', t.dataset.imp==='text'));
   if(S.meta.ai && S.meta.ai.key) $('aiKey').value = S.meta.ai.key;
+  if(S.meta.ai && S.meta.ai.model) $('aiModel').value = S.meta.ai.model;
   openMask('maskOneImport');
 }
 
@@ -1525,11 +1528,17 @@ function loadSample(){
 
 /* ---------------- 页面切换 ---------------- */
 function switchPage(name){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
-  $('page-'+name).classList.add('on');
-  document.querySelectorAll('#tabbar .tab').forEach(t=>t.classList.toggle('on', t.dataset.page===name));
-  window.scrollTo(0,0);
-  if (name==='week' && S.meta.weekView==='grid'){ agendaJump = true; renderWeek(); }
+  const doSwitch = () => {
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));
+    $('page-'+name).classList.add('on');
+    document.querySelectorAll('#tabbar .tab').forEach(t=>t.classList.toggle('on', t.dataset.page===name));
+    window.scrollTo(0,0);
+    if (name==='week' && S.meta.weekView==='grid'){ agendaJump = true; renderWeek(); }
+  };
+  // View Transitions（新浏览器平滑过渡；旧浏览器/减动效用户直接切换）
+  if (document.startViewTransition && !matchMedia('(prefers-reduced-motion: reduce)').matches){
+    document.startViewTransition(doSwitch);
+  } else { doSwitch(); }
 }
 
 /* ---------------- 事件绑定 ---------------- */
@@ -1805,9 +1814,23 @@ function bind(){
   $('btnSyncHist').addEventListener('click', openHist);
   $('histList').addEventListener('click', e => { const r = e.target.closest('.histrow'); if (r) previewHist(+r.dataset.rev); });
   $('btnMakeup').addEventListener('click', openMakeup);
-  $('btnBillImg').addEventListener('click', () => {
+  $('btnBillImg').addEventListener('click', async () => {
     try {
-      $('billImgWrap').innerHTML = '<img src="' + billImageDataUrl() + '" style="width:100%;border-radius:14px;box-shadow:0 4px 14px rgba(150,100,125,.2)"><div class="thint" style="margin-top:6px">长按上面的图片 → 存到相册 / 发给家长 ♡</div>';
+      const url = billImageDataUrl();
+      let canShare = false, blob = null;
+      if (navigator.share && navigator.canShare && typeof File !== 'undefined'){
+        try {
+          blob = await (await fetch(url)).blob();
+          canShare = navigator.canShare({ files: [new File([blob], 'bill.jpg', { type: 'image/jpeg' })] });
+        } catch(e){ canShare = false; }
+      }
+      $('billImgWrap').innerHTML = '<img src="' + url + '" style="width:100%;border-radius:14px;box-shadow:0 4px 14px rgba(150,100,125,.2)">'
+        + (canShare ? '<button class="btn big" id="btnBillShare" style="margin-top:8px">📤 分享给家长（微信 / QQ）</button>' : '')
+        + '<div class="thint" style="margin-top:6px">' + (canShare ? '点上面直接唤起系统分享 ♡ 也可以长按图片存相册' : '长按图片 → 存到相册 / 发给家长 ♡') + '</div>';
+      if (canShare) $('btnBillShare').addEventListener('click', () => {
+        const f = new File([blob], 'qinqin-账单-' + todayStr().slice(0,7) + '.jpg', { type: 'image/jpeg' });
+        navigator.share({ files: [f], title: '本月课单' }).catch(()=>{});
+      });
     } catch(e){ toast('生成失败：' + e.message); }
   });
 
@@ -1980,6 +2003,19 @@ function init(){
   S = load() || defaults();
   dedupeData();
   applyTheme(); applyWall(); bind(); renderAll(); syncFillForm();
+  // 存储持久化：防止系统在空间紧张时清掉课表数据（丢过一次，怕了）
+  if (navigator.storage && navigator.storage.persist){ try { navigator.storage.persist(); } catch(e){} }
+  // 桌面长按快捷方式 / 深链路由：?p=today|week|students|orch|tuner|bill
+  try {
+    const pm = new URLSearchParams(location.search).get('p');
+    if (pm){
+      setTimeout(() => {
+        if (pm === 'tuner'){ $('tunerPane').style.display=''; $('metroPane').style.display='none'; try{metroStop();}catch(e){} openMask('maskTuner'); }
+        else if (pm === 'bill'){ const b = $('btnBill'); if (b) b.click(); }
+        else if (['today','week','students','orch','themes'].includes(pm)) switchPage(pm);
+      }, 800);
+    }
+  } catch(e){}
 
   // 链接导入：index.html#d=分享码
   if(location.hash.startsWith('#d=')){
